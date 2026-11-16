@@ -110,7 +110,7 @@ try {
                         id_cotizacion,
                         id_orden,
                         total
-                      FROM COTIZACIONES
+                      FROM cotizaciones
                       WHERE id_cotizacion = :id_cotizacion
                       AND id_orden = :id_orden
                       FOR UPDATE";
@@ -140,7 +140,7 @@ try {
 
     $sqlPagos = "SELECT
                     COALESCE(SUM(monto_recibido), 0) AS total_recibido
-                 FROM PAGO_CUENTA
+                 FROM pago_cuenta
                  WHERE id_cotizacion = :id_cotizacion";
 
     $consultaPagos = $conexion->prepare($sqlPagos);
@@ -177,7 +177,7 @@ try {
 
     // Registrar pago
 
-    $sqlPago = "INSERT INTO PAGO_CUENTA
+    $sqlPago = "INSERT INTO pago_cuenta
                 (
                     id_orden,
                     id_cotizacion,

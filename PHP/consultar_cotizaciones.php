@@ -58,18 +58,18 @@ try {
                 dc.precio_unitario,
                 dc.total_item
 
-            FROM COTIZACIONES c
+            FROM cotizaciones c
 
-            INNER JOIN ORDENES_SERVICIO os
+            INNER JOIN ordenes_servicio os
                 ON c.id_orden = os.id_orden
 
-            INNER JOIN VEHICULOS v
+            INNER JOIN vehiculos v
                 ON os.id_vehiculo = v.id_vehiculo
 
-            INNER JOIN CLIENTES cl
+            INNER JOIN clientes cl
                 ON v.id_cliente = cl.id_cliente
 
-            LEFT JOIN DETALLE_COTIZACION dc
+            LEFT JOIN detalle_cotizacion dc
                 ON c.id_cotizacion = dc.id_cotizacion
 
             ORDER BY c.id_cotizacion DESC, dc.id_detalle ASC";

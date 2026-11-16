@@ -1184,3 +1184,28 @@ body.inicio-body .access-arrow {
         grid-template-columns: 1fr;
     }
 }
+
+/* =================================
+   SELECTS DE LAS PANTALLAS
+================================= */
+
+.contenido select {
+    background: white;
+    border: 2px solid #d0d0d0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    height: 42px;
+    outline: none;
+    padding: 0 10px;
+}
+
+.contenido select:focus {
+    border-color: #ad7777;
+}
+
+#seleccionarOrden {
+    max-width: 420px;
+    width: 100%;
+}

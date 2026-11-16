@@ -33,9 +33,9 @@ try {
 
             MAX(p.fecha_pago) AS fecha_ultimo_pago
 
-        FROM COTIZACIONES c
+        FROM cotizaciones c
 
-        LEFT JOIN PAGO_CUENTA p
+        LEFT JOIN pago_cuenta p
             ON c.id_cotizacion = p.id_cotizacion
 
         GROUP BY

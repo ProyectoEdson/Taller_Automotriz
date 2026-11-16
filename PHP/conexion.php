@@ -1,10 +1,13 @@
 
 <?php
 
-$servidor = "localhost";
-$nombreBD = "taller_automotriz";
-$usuario = "root";
-$contrasena = "";
+$servidor = getenv("TALLER_DB_HOST") ?: "localhost";
+
+$nombreBD = getenv("TALLER_DB_NAME") ?: "taller_automotriz";
+
+$usuario = getenv("TALLER_DB_USER") ?: "root";
+
+$contrasena = getenv("TALLER_DB_PASS") ?: "";
 
 try {
 

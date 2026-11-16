@@ -2,6 +2,8 @@
 
 Sistema web de gestión para un taller automotriz: recepción del vehículo, diagnóstico y reparación, cotización y registro de pagos. Desarrollado en PHP puro con MySQL/MariaDB, sin frameworks ni dependencias externas.
 
+> Rama `linux`: variante portable con archivos `.php` y nombres de tabla en minúsculas. En Windows funciona igual, porque su sistema de archivos y MySQL no distinguen mayúsculas.
+
 ## Tecnologías
 
 - PHP 8.3 (PDO, sesiones)
@@ -14,7 +16,7 @@ Sistema web de gestión para un taller automotriz: recepción del vehículo, dia
 | Rol | Acceso |
 |---|---|
 | Mecánico | Diagnóstico y reparación (`INDEX.php`), consulta y actualización de órdenes de trabajo |
-| Recepcionista | Cotizaciones (`VISTAS/COTIZACIÓN.PHP`) y pagos (`VISTAS/PAGOS.PHP`) |
+| Recepcionista | Cotizaciones (`VISTAS/COTIZACIÓN.php`) y pagos (`VISTAS/PAGOS.php`) |
 
 La autenticación se valida contra la tabla `usuarios` (contraseñas con `password_hash`) y el rol elegido en el login debe coincidir con el rol real del usuario. Cada vista y cada endpoint verifica la sesión y el rol.
 
@@ -49,14 +51,16 @@ La autenticación se valida contra la tabla `usuarios` (contraseñas con `passwo
 │   └── registrar_pago.php
 ├── VISTAS/
 │   ├── LOGIN.HTML
-│   ├── INICIO.PHP
-│   ├── COTIZACIÓN.PHP
-│   └── PAGOS.PHP
-├── INDEX.PHP                   # módulo de diagnóstico (mecánico)
+│   ├── INICIO.php
+│   ├── COTIZACIÓN.php
+│   └── PAGOS.php
+├── dev/
+│   └── linux-dev.sh            # arranque local sin sudo
+├── INDEX.php                   # módulo de diagnóstico (mecánico)
 └── INDEX.HTML                  # prototipo estático (no forma parte de la app)
 ```
 
-Los archivos `VISTAS/INICIO.HTML`, `VISTAS/COTIZACIÓN.HTML`, `VISTAS/PAGOS.HTML` e `INDEX.HTML` son prototipos estáticos basados en `localStorage`; la aplicación funcional son las versiones `.PHP`.
+Los archivos `VISTAS/INICIO.HTML`, `VISTAS/COTIZACIÓN.HTML`, `VISTAS/PAGOS.HTML` e `INDEX.HTML` son prototipos estáticos basados en `localStorage`; la aplicación funcional son las versiones `.php`.
 
 ## Base de datos
 
@@ -105,6 +109,66 @@ Relaciones principales:
    echo password_hash("tu-contraseña", PASSWORD_DEFAULT);
    ```
 
+## Ejecutar en Linux
+
+### Arranque rápido (desarrollo, sin sudo)
+
+Requiere `php`, `php-mysqlnd`, `php-mbstring` y `mariadb-server` instalados:
+
+```bash
+sudo dnf install php php-mysqlnd php-mbstring mariadb-server   # Fedora
+# sudo apt install php php-mysql php-mbstring mariadb-server   # Debian/Ubuntu
+
+./dev/linux-dev.sh
+```
+
+El script inicializa una base local en `.dev/db`, importa el dump y arranca PHP en `http://127.0.0.1:8080/VISTAS/LOGIN.HTML`. `Ctrl+C` detiene la aplicación y la base. Para reiniciar los datos: `TALLER_DEV_RESET=1 ./dev/linux-dev.sh`.
+
+Usuarios de prueba:
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `Asadmin` | `123456` | Recepcionista |
+| `AsaCorredor` | `789456` | Mecánico |
+
+### Apache y MariaDB del sistema
+
+1. Instala y arranca los servicios:
+
+   ```bash
+   sudo dnf install httpd php php-mysqlnd php-mbstring mariadb-server
+   sudo systemctl enable --now httpd mariadb
+   ```
+
+2. Crea el usuario de base de datos:
+
+   ```sql
+   CREATE DATABASE taller_automotriz CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'taller'@'localhost' IDENTIFIED BY 'cambia-esta-clave';
+   GRANT ALL PRIVILEGES ON taller_automotriz.* TO 'taller'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+3. Importa el dump:
+
+   ```bash
+   sudo mariadb taller_automotriz < "BASE DE DATO/taller_automotriz.sql"
+   ```
+
+4. Copia el proyecto y ajusta permisos:
+
+   ```bash
+   sudo cp -r . /var/www/html/taller
+   sudo chown -R apache:apache /var/www/html/taller
+   ```
+
+5. Configura la conexión en `PHP/conexion.php` o define `TALLER_DB_USER` y `TALLER_DB_PASS` (también `TALLER_DB_HOST` y `TALLER_DB_NAME`).
+
+6. Abre `http://localhost/taller/VISTAS/LOGIN.HTML`.
+
+> En Fedora, si SELinux bloquea la lectura: `sudo chcon -R -t httpd_sys_content_t /var/www/html/taller`.
+> `BASE DE DATO/.htaccess` bloquea la descarga del dump cuando Apache permite `.htaccess`; en producción muévelo fuera del directorio público.
+
 ## Endpoints
 
 | Método | Endpoint | Rol | Función |
@@ -122,7 +186,8 @@ Relaciones principales:
 
 ## Notas
 
-- `PHP/conexion.php` contiene credenciales de desarrollo (`root` sin contraseña). Cámbialas antes de desplegar.
+- `PHP/conexion.php` usa las variables `TALLER_DB_HOST`, `TALLER_DB_NAME`, `TALLER_DB_USER` y `TALLER_DB_PASS`, con `root` sin contraseña por defecto. Cámbialas antes de desplegar.
 - `PHP/probar_conexion.php` es una prueba manual de conexión.
 - El impuesto aplicado a las cotizaciones es del 7 % y está fijado en el código.
 - Las carpetas `AUDIO/`, `VIDEO/` y `JS/` están vacías y no se versionan.
+- Los nombres de archivo, tablas y enlaces están en minúsculas para que funcionen en Linux; Windows los resuelve igual.

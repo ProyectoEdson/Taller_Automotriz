@@ -136,7 +136,7 @@ $rolMostrar = strtoupper($rol);
 
                 <?php if ($rol === "recepcionista"): ?>
 
-                <a href="COTIZACIÓN.PHP" class="nav-item">
+                <a href="COTIZACIÓN.php" class="nav-item">
 
                     <span>
 
@@ -333,7 +333,7 @@ $rolMostrar = strtoupper($rol);
 
                     <?php if ($rol === "recepcionista"): ?>
 
-                    <a href="COTIZACIÓN.PHP" class="access-card">
+                    <a href="COTIZACIÓN.php" class="access-card">
 
                         <div class="access-icon">📑</div>
 

@@ -90,7 +90,7 @@ try {
     // Buscar la orden mediante su código.
 
     $sqlOrden = "SELECT id_orden
-                 FROM ORDENES_SERVICIO
+                 FROM ordenes_servicio
                  WHERE codigo_orden = :codigo_orden
                  LIMIT 1";
 
@@ -157,7 +157,7 @@ try {
 
     // Registrar la cotización.
 
-    $sqlCotizacion = "INSERT INTO COTIZACIONES
+    $sqlCotizacion = "INSERT INTO cotizaciones
         (id_orden, subtotal, impuesto, total)
         VALUES
         (:id_orden, :subtotal, :impuesto, :total)";
@@ -179,7 +179,7 @@ try {
 
     // Preparar el registro de los detalles.
 
-    $sqlDetalle = "INSERT INTO DETALLE_COTIZACION
+    $sqlDetalle = "INSERT INTO detalle_cotizacion
         (
             id_cotizacion,
             descripcion,

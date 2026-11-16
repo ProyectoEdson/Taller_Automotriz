@@ -59,8 +59,8 @@ try {
             u.contrasena,
             u.id_rol,
             r.nombre_rol
-        FROM USUARIOS u
-        INNER JOIN ROLES r
+        FROM usuarios u
+        INNER JOIN roles r
             ON u.id_rol = r.id_rol
         WHERE u.usuario = :usuario
         LIMIT 1

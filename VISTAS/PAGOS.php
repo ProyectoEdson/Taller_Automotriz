@@ -92,7 +92,7 @@ if ($_SESSION["rol"] !== "recepcionista") {
 
             </a>
 
-            <a href="../VISTAS/COTIZACIÓN.PHP" class="opcion">
+            <a href="../VISTAS/COTIZACIÓN.php" class="opcion">
 
                 <span class="icono">
 
@@ -112,7 +112,7 @@ if ($_SESSION["rol"] !== "recepcionista") {
 
             </a>
 
-            <a href="../VISTAS/PAGOS.PHP" class="opcion seleccionado">
+            <a href="../VISTAS/PAGOS.php" class="opcion seleccionado">
 
                 <span class="icono">
 

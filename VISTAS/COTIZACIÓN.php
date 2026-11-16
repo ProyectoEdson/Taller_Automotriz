@@ -101,6 +101,10 @@ if ($_SESSION["rol"] !== "recepcionista") {
     box-sizing: border-box;
 }
 
+.tabla-cotizacion select {
+    min-width: 110px;
+}
+
 .resumen-cotizacion {
     width: 300px;
     max-width: 100%;
@@ -253,7 +257,7 @@ if ($_SESSION["rol"] !== "recepcionista") {
 
             </a>
 
-            <a href="COTIZACIÓN.PHP" class="opcion seleccionado">
+            <a href="COTIZACIÓN.php" class="opcion seleccionado">
 
                 <span class="icono">
                     <svg viewBox="0 0 24 24" width="22" height="22"
@@ -269,7 +273,7 @@ if ($_SESSION["rol"] !== "recepcionista") {
 
             </a>
 
-            <a href="PAGOS.PHP" class="opcion">
+            <a href="PAGOS.php" class="opcion">
 
                 <span class="icono">
                     <svg viewBox="0 0 24 24" width="22" height="22"
