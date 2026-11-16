@@ -1109,3 +1109,78 @@ body.inicio-body .access-arrow {
     font-family: Arial, sans-serif !important;
     font-size: 15px !important;
 }
+
+/* =================================
+   DIAGNÓSTICO: ORDEN Y REPUESTOS
+================================= */
+
+#ordenTrabajo {
+    background: white;
+    border: 2px solid #d0d0d0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    outline: none;
+    padding: 11px;
+    width: 100%;
+}
+
+#ordenTrabajo:focus {
+    border-color: #ad7777;
+}
+
+.aviso-ordenes {
+    color: #970000;
+    font-size: 14px;
+    margin: 8px 0 0;
+}
+
+.nuevo-repuesto {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 110px 140px auto;
+    margin-top: 14px;
+}
+
+.nuevo-repuesto[hidden] {
+    display: none;
+}
+
+.nuevo-repuesto button {
+    background: #a00000;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 11px 18px;
+}
+
+.nuevo-repuesto button:hover {
+    background: #800000;
+}
+
+.btn-eliminar-repuesto {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #970000;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1;
+    margin-left: 10px;
+    padding: 2px 6px;
+}
+
+.btn-eliminar-repuesto:hover {
+    background: #f2d9dc;
+}
+
+@media (max-width: 760px) {
+    .nuevo-repuesto {
+        grid-template-columns: 1fr;
+    }
+}

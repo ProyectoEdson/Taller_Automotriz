@@ -22,7 +22,7 @@ La autenticación se valida contra la tabla `usuarios` (contraseñas con `passwo
 
 1. **Login** – `VISTAS/LOGIN.HTML` envía las credenciales a `PHP/validar_login.php` y redirige a `VISTAS/INICIO.php`.
 2. **Inicio** – panel con accesos filtrados según el rol.
-3. **Diagnóstico y reparación** – registra o actualiza cliente, vehículo y orden de servicio, guarda el diagnóstico, las reparaciones y los repuestos utilizados en una única transacción. Genera el código de orden `AT-<aammdd>-<4 dígitos>` cuando se deja vacío.
+3. **Diagnóstico y reparación** – el mecánico selecciona una orden existente y ve los datos del cliente y del vehículo en solo lectura, o elige "Nueva orden" para registrar cliente, vehículo y orden. En ambos casos guarda el diagnóstico, las reparaciones y los repuestos utilizados en una única transacción. Genera el código de orden `AT-<aammdd>-<4 dígitos>` cuando es una orden nueva.
 4. **Cotizaciones** – busca la orden por código, precarga diagnóstico, reparaciones y repuestos, permite editar líneas y calcula subtotal, impuesto (7 %) y total.
 5. **Pagos** – selecciona una cotización, muestra el total y registra el pago o abono con método Efectivo, Tarjeta, Transferencia o Yappy. El backend impide sobrepagos y cotizaciones ya saldadas.
 
@@ -40,6 +40,8 @@ La autenticación se valida contra la tabla `usuarios` (contraseñas con `passwo
 │   ├── validar_login.php
 │   ├── cerrar_sesion.php
 │   ├── guardar_diagnostico.php
+│   ├── listar_ordenes.php
+│   ├── consultar_diagnostico.php
 │   ├── consultar_orden.php
 │   ├── guardar_cotizacion.php
 │   ├── consultar_cotizaciones.php
@@ -73,11 +75,14 @@ Relaciones principales:
 ## Instalación
 
 1. Copia el proyecto dentro del directorio público del servidor web (por ejemplo `htdocs/` en XAMPP o `/var/www/html/` en Apache).
-2. Importa la base de datos:
+2. Crea la base de datos e importa el dump:
 
    ```bash
-   mysql -u root -p < "BASE DE DATO/taller_automotriz.sql"
+   mysql -u root -p -e "CREATE DATABASE taller_automotriz CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   mysql -u root -p taller_automotriz < "BASE DE DATO/taller_automotriz.sql"
    ```
+
+   El dump no incluye `CREATE DATABASE`, por eso se crea primero.
 
 3. Ajusta las credenciales en `PHP/conexion.php`:
 
@@ -106,7 +111,9 @@ Relaciones principales:
 |---|---|---|---|
 | POST | `PHP/validar_login.php` | público | Inicia sesión |
 | GET | `PHP/cerrar_sesion.php` | sesión | Cierra sesión |
-| POST | `PHP/guardar_diagnostico.php` | mecánico | Cliente, vehículo, orden, diagnóstico y repuestos |
+| POST | `PHP/guardar_diagnostico.php` | mecánico | Alta de cliente/vehículo/orden o actualización del diagnóstico de una orden |
+| GET | `PHP/listar_ordenes.php` | mecánico | Lista las órdenes de trabajo con cliente y vehículo |
+| POST | `PHP/consultar_diagnostico.php` | mecánico | Devuelve la orden, el diagnóstico y los repuestos registrados |
 | POST | `PHP/consultar_orden.php` | recepcionista | Consulta la orden y arma los detalles de cotización |
 | POST | `PHP/guardar_cotizacion.php` | recepcionista | Registra cotización y detalle |
 | GET | `PHP/consultar_cotizaciones.php` | sesión | Lista cotizaciones con detalle |
