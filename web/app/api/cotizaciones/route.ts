@@ -8,9 +8,10 @@ const schema = z.object({
   codigoOrden: z.string().trim().min(1).max(30),
   detalles: z.array(z.object({
     descripcion: z.string().trim().min(1).max(150), tipo: z.enum(["Servicio", "Repuesto"]),
-    cantidad: z.number().int().positive(), precio: z.string().regex(/^\d{1,8}(\.\d{1,2})?$/),
+    cantidad: z.number().int().positive().max(2147483647), precio: z.string().regex(/^\d{1,8}(\.\d{1,2})?$/),
   })).min(1),
 });
+class InvalidAmount extends Error {}
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
       });
       const subtotal = detalles.reduce((sum, item) => sum.plus(item.totalItem), new Prisma.Decimal(0));
       const impuesto = subtotal.mul("0.07").toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+      if (detalles.some((item) => item.totalItem.gt("99999999.99")) || subtotal.plus(impuesto).gt("99999999.99")) throw new InvalidAmount();
       return tx.cotizacion.create({ data: {
         idOrden: orden.idOrden, subtotal, impuesto, total: subtotal.plus(impuesto),
         detalles: { create: detalles },
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
     if (!result) return NextResponse.json({ mensaje: "Orden no encontrada" }, { status: 409 });
     return NextResponse.json({ idCotizacion: result.idCotizacion, subtotal: result.subtotal.toFixed(2), impuesto: result.impuesto.toFixed(2), total: result.total.toFixed(2) });
   } catch (error) {
+    if (error instanceof InvalidAmount) return NextResponse.json({ mensaje: "Importe fuera de rango" }, { status: 400 });
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
       return NextResponse.json({ mensaje: "Esta orden ya tiene una cotización" }, { status: 409 });
     console.error("POST /api/cotizaciones", error);

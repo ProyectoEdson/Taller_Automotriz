@@ -9,7 +9,7 @@ const money = z.string().regex(/^\d{1,8}(\.\d{1,2})?$/);
 const text = (length: number) => z.string().trim().max(length);
 const required = (length: number) => text(length).min(1);
 const optional = (length: number) => text(length).optional().default("");
-const part = z.object({ nombre: required(150), cantidad: z.number().int().positive(), precio: money });
+const part = z.object({ nombre: required(150), cantidad: z.number().int().positive().max(2147483647), precio: money });
 const common = z.object({
   diagnostico: required(5000), reparaciones: required(5000), repuestos: z.array(part),
 });
@@ -24,6 +24,7 @@ const input = z.union([
     codigoOrden: optional(30),
   }),
 ]);
+class InvalidAmount extends Error {}
 
 class Conflict extends Error {}
 
@@ -86,16 +87,18 @@ export async function POST(request: Request) {
           if (!changed.count) throw new Conflict(`Stock insuficiente: ${item.nombre}`);
         }
         const price = new Prisma.Decimal(item.precio);
+        const totalItem = price.mul(item.cantidad);
+        if (totalItem.gt("99999999.99")) throw new InvalidAmount();
         await tx.repuestoUtilizado.create({ data: {
           idDiagnostico: diagnostic.idDiagnostico, idRepuesto: inventory?.idRepuesto ?? null,
-          descripcion: item.nombre, cantidad: item.cantidad, precioUnitario: price,
-          totalItem: price.mul(item.cantidad),
+          descripcion: item.nombre, cantidad: item.cantidad, precioUnitario: price, totalItem,
         } });
       }
       return { idOrden, codigoOrden, idDiagnostico: diagnostic.idDiagnostico };
     });
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof InvalidAmount) return NextResponse.json({ mensaje: "Importe de repuesto fuera de rango" }, { status: 400 });
     if (error instanceof Conflict || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"))
       return NextResponse.json({ mensaje: error instanceof Conflict ? error.message : "Código o placa ya registrados" }, { status: 409 });
     console.error("POST /api/ordenes", error);
