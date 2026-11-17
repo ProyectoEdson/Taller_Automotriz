@@ -1,23 +1,33 @@
-# Taller Automotriz — Next.js (fase 5)
+# Taller Automotriz — Next.js
 
-Requiere Node.js 22 y Docker con Compose. La aplicación PHP permanece en la raíz como referencia; este directorio contiene la migración. PostgreSQL local usa solo el contenedor `postgres:16-alpine`; no se usa Neon.
+Migración funcional de CU-08 (diagnóstico), CU-04 (cotización) y CU-05 (pagos). La app PHP de la raíz sigue como referencia; no se ejecuta para iniciar Next.js. Requiere **Node.js 22.x**, npm y Docker Compose. Trabajar desde `web/`; el PostgreSQL local es `postgres:16-alpine`, enlazado solo a `127.0.0.1:5432` con volumen persistente (`compose.yaml`).
+
+## Instalación local
 
 ```bash
 cd web
-# Crear .env local (no se versiona):
-printf '%s\n' 'DATABASE_URL="postgresql://taller:taller_dev_only@127.0.0.1:5432/taller_automotriz?schema=public"' > .env
-node -e 'console.log("AUTH_SECRET=" + require("node:crypto").randomBytes(32).toString("hex"))' >> .env
-printf '%s\n' 'AUTH_URL="http://127.0.0.1:3000"' >> .env
+cp .env.example .env
+```
+
+Editar **solo** `.env` (ignorado por Git): sustituir `USER:PASSWORD` de `DATABASE_URL` por `taller:taller_dev_only` del `compose.yaml` local y generar un secreto propio con `node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))'`; pegarlo en `AUTH_SECRET`. Mantener `AUTH_URL=http://127.0.0.1:3000` si se usa el puerto predeterminado. No usar estas credenciales ni el seed demo en un servicio público.
+
+| Variable | Uso local |
+|---|---|
+| `DATABASE_URL` | PostgreSQL del contenedor (`127.0.0.1:5432/taller_automotriz?schema=public`); `schema.prisma` y Prisma Client la leen. |
+| `AUTH_SECRET` | Clave aleatoria privada para JWT/Auth.js; obligatoria y distinta por entorno. |
+| `AUTH_URL` | Origen de la app; localmente `http://127.0.0.1:3000`. |
+
+```bash
 docker compose up -d --wait postgres
 npm ci
 npx prisma migrate deploy
-npm run db:seed
+npx prisma db seed
 npm run dev
 ```
 
-Abrir `http://127.0.0.1:3000/login`. Inicia sesión con `Asadmin` / `123456` (recepcionista) o `AsaCorredor` / `789456` (mecánico). Se comprueba el perfil elegido y se redirige a `/inicio`. Inicio lee sus cuatro contadores de PostgreSQL; Diagnóstico permite crear/actualizar órdenes y repuestos, Cotización genera una sola cotización por orden y Pagos registra abonos o liquidaciones. La autenticación usa `usuario`, no correo: es una diferencia intencional respecto a RNF-01 para conservar los hashes y usuarios existentes. `AUTH_SECRET` y las credenciales de Docker son solo para desarrollo; no publicar ni versionar `.env`. `npm run db:seed` conserva los IDs y hashes bcrypt del dump de desarrollo y puede repetirse. Para inspeccionar la base sin instalar `psql` en el host: `docker compose exec postgres psql -U taller -d taller_automotriz`. Para detener el servicio: detener solo el proceso de la aplicación cuando se necesite; no usar `docker compose down` durante esta fase.
+Abrir `http://127.0.0.1:3000/login`. Cuentas **solo de desarrollo**: `Asadmin` / `123456` (recepcionista) y `AsaCorredor` / `789456` (mecánico). El perfil elegido debe coincidir con el rol. Login por `usuario`, no email, para conservar los hashes del dump. Inicio consulta cuatro contadores de PostgreSQL. `npx prisma migrate deploy` aplica migraciones existentes sin crear otra; `npx prisma db seed` es repetible, pero no limpia datos de trabajo. Para empezar desde cero **solo en la base local descartable**, `npx prisma migrate reset --force` (incluye seed) y después `npx prisma db seed` si se desea repetirlo.
 
-Para obtener las cuatro cifras del dashboard desde la misma instantánea SQL: `docker compose exec -T postgres psql -U taller -d taller_automotriz < prisma/counts.sql`. El seed original debe producir `2 / 0 / 0 / 0`.
+Verificar los cuatro contadores en una instantánea SQL desde `web/`: `docker compose exec -T postgres psql -U taller -d taller_automotriz < prisma/counts.sql`. El seed da `2/0/0/0`. Inspeccionar tablas: `docker compose exec -T postgres psql -U taller -d taller_automotriz`. No versionar `.env`; `.env.example` contiene únicamente marcadores de posición.
 
 ## Sincronización del CSS original
 
@@ -56,6 +66,22 @@ Capturas a 1360×950: `docs/screenshots/{login,inicio,diagnostico,cotizacion,pag
 
 Desde `web/`, con `.env` local y PostgreSQL saludable, ejecutar `node --env-file=.env scripts/phase5-matrix.mjs`. **Destruye los datos de la base local `taller_automotriz`**: aplica `prisma migrate reset --force` y el seed al inicio y al final (también si una aserción falla). Levanta Next temporalmente en `127.0.0.1:3100`, usa sesiones reales de ambos perfiles, endpoints HTTP reales y consultas Prisma a PostgreSQL; no usa mocks ni servicios externos. Para comprobar el 500 detiene la aplicación temporal y la reinicia con un `DATABASE_URL` hacia el puerto cerrado 65432; no detiene PostgreSQL. Ante fallo del script, la aserción mantiene su error y no se ignora.
 
-En la ejecución comprobada: seed inicial `2/0/0/0` y filas órdenes/diagnósticos/cotizaciones/pagos `2/2/2/2`; permisos API 401/403, páginas 403, validaciones 400 y reglas de negocio 409; dos actualizaciones de diagnóstico conservaron `idDiagnostico=3` y una fila de repuesto; stock fixture 3→2→1→2 y 409 sin alterar el stock; cotización `27.70 + 1.94 = 29.64`, duplicado 409; abono 5.00 dejó 24.64 Pendiente, liquidación 24.64 dejó 0 Pagado, pagos posteriores/sobrepago 409; pagos simultáneos de 75.00 sobre 107.00 dieron 200/409 y suma 75.00. Una placa existente propia conservó año 2027 y kilometraje 49998 cuando llegaron `null`, actualizando marca/modelo; otra persona recibió 409. Con el puerto 65432 cerrado, los tres CU dieron 500 con `{\"mensaje\":\"Error interno\"}` sin mensajes SQL.
+| Escenario de `phase5-matrix.mjs` | Aserciones sobre HTTP y PostgreSQL |
+|---|---|
+| Sesión y permisos | API 401 sin sesión, 403 por rol; páginas 403 y redirect sin sesión. |
+| CU-08 diagnóstico | 400 por longitud, dos actualizaciones con un solo diagnóstico y un repuesto; stock fixture 3→2→1→2 y 409 insuficiente; placa propia conserva año 2027/km 49998 si llegan `null`, placa ajena 409. |
+| CU-04 cotización | 400 sin líneas; `27.70 + 1.94 = 29.64` persistidos; segunda cotización 409. |
+| CU-05 pagos | 400 monto cero; abono 5.00 → saldo 24.64 Pendiente, liquidación 24.64 → 0 Pagado; sobrepago/cierre 409, dos pagos simultáneos de 75.00 sobre 107.00 → 200/409 y SUM 75.00; IDs reales. |
+| Falla controlada | Base aislada en puerto cerrado 65432: los tres endpoints responden 500 y `{"mensaje":"Error interno"}`, sin SQL en respuesta. |
 
-`npm run lint`, `npx tsc --noEmit` y `npm run build` terminaron con código 0. El build emitió advertencias de `jose` sobre `CompressionStream`/`DecompressionStream` en Edge Runtime; las rutas y la autenticación funcionaron en las pruebas, pero la advertencia no se suprimió. Capturas de las cinco pantallas del seed en `docs/screenshots/{login,inicio,diagnostico,cotizacion,pagos}-fase5.*` (1360×950). Después de las capturas, el panel siguió en `2/0/0/0`; filas clientes/vehículos/órdenes/diagnósticos/repuestos/cotizaciones/detalles/pagos/inventario `2/2/2/2/5/2/5/2/0`. Trazabilidad CU → archivos/funciones: `../MIGRATION_PLAN.md` («Trazabilidad implementada, fase 5»).
+Comandos de verificación desde `web/`: `npm run lint`, `npx tsc --noEmit`, `npm run build`, `node --env-file=.env scripts/phase5-matrix.mjs` y la consulta SQL anterior. El build ha mostrado advertencias de `jose` sobre `CompressionStream`/`DecompressionStream` en Edge Runtime; [riesgo y verificación pendientes](docs/DEPLOYMENT.md#riesgo-conocido-jose-en-edge-runtime), sin ocultar el aviso. El script restaura el panel `2/0/0/0` y las filas clientes/vehículos/órdenes/diagnósticos/repuestos/cotizaciones/detalles/pagos/inventario `2/2/2/2/5/2/5/2/0`.
+
+Trazabilidad CU → archivos/funciones en [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#trazabilidad-implementada-fase-5). [Preparación Vercel/Neon, sin despliegue](docs/DEPLOYMENT.md).
+
+| Pantalla (1360×950) | Fase 4 | Fase 5 |
+|---|---|---|
+| Login | [captura](docs/screenshots/login-fase4.webp) | [captura](docs/screenshots/login-fase5.webp) |
+| Inicio | [captura](docs/screenshots/inicio-fase4.webp) | [captura](docs/screenshots/inicio-fase5.webp) |
+| Diagnóstico | [captura](docs/screenshots/diagnostico-fase4.png) | [captura](docs/screenshots/diagnostico-fase5.png) |
+| Cotización | [captura](docs/screenshots/cotizacion-fase4.png) | [captura](docs/screenshots/cotizacion-fase5.png) |
+| Pagos | [captura](docs/screenshots/pagos-fase4.png) | [captura](docs/screenshots/pagos-fase5.png) |
