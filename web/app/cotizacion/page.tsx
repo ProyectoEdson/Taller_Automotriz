@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import WorkshopShell from "@/components/WorkshopShell";
 import { prisma } from "@/lib/prisma";
 import OrderInput from "./OrderInput";
+import CotizacionEditor from "./CotizacionEditor";
 import styles from "./cotizacion.module.css";
 
 export const dynamic = "force-dynamic";
@@ -119,7 +120,7 @@ export default async function Cotizacion({
     <WorkshopShell role="recepcionista" active="cotizacion">
       <div className={styles.cotizacion}>
         <h1>GENERAR COTIZACIÓN</h1>
-        <form id="formCotizacion">
+        <div id="formCotizacionDatos">
           <section className="info-orden-cotizacion">
             <h3>INFORMACIÓN DE LA ORDEN</h3>
             <div className="datos-orden-cotizacion">
@@ -152,61 +153,18 @@ export default async function Cotizacion({
             </div>
           </section>
 
-          <section className="detalle-cotizacion">
-            <h3>SERVICIOS Y REPUESTOS</h3>
-            <div className="tabla-contenedor">
-              <table className="tabla-cotizacion">
-                <thead>
-                  <tr>
-                    <th>Descripción</th>
-                    <th>Tipo</th>
-                    <th>Cantidad</th>
-                    <th>Precio unitario</th>
-                    <th>Total</th>
-                    <th>Acción</th>
-                  </tr>
-                </thead>
-                <tbody id="detalleCotizacion">
-                  {filas.map((fila) => (
-                    <tr key={fila.id}>
-                      <td><input type="text" className="descripcion" defaultValue={fila.descripcion} placeholder="Descripción" maxLength={150} readOnly={Boolean(cotizacion)} /></td>
-                      <td>
-                        <select className="tipo" defaultValue={fila.tipo} disabled={Boolean(cotizacion)}>
-                          <option value="Servicio">Servicio</option>
-                          <option value="Repuesto">Repuesto</option>
-                        </select>
-                      </td>
-                      <td><input type="number" className="cantidad" min="1" step="1" defaultValue={fila.cantidad} readOnly={Boolean(cotizacion)} /></td>
-                      <td><input type="number" className="precio" min="0" step="0.01" defaultValue={fila.precio} placeholder="Sin precio" readOnly={Boolean(cotizacion)} /></td>
-                      <td><input type="number" className="total-item" value={fila.total} placeholder="—" readOnly /></td>
-                      <td><button type="button" className="btn-eliminar-detalle" disabled title="Disponible en fase 4">Eliminar</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="acciones-cotizacion">
-              <button type="button" id="agregarDetalle" disabled title="Disponible en fase 4">+ Agregar detalle</button>
-            </div>
-            <div className="resumen-cotizacion">
-              <div className="fila-resumen"><span>Subtotal:</span><strong id="subtotalTexto">{cotizacion ? `$${cotizacion.subtotal.toFixed(2)}` : "—"}</strong></div>
-              <div className="fila-resumen"><span>Impuesto (7 %):</span><strong id="impuestoTexto">{cotizacion ? `$${cotizacion.impuesto.toFixed(2)}` : "—"}</strong></div>
-              <div className="fila-resumen total-final"><span>Total:</span><strong id="totalTexto">{cotizacion ? `$${cotizacion.total.toFixed(2)}` : "—"}</strong></div>
-            </div>
-          </section>
-          <div className="acciones-cotizacion">
-            <button type="submit" id="btnGenerar" disabled title="Disponible en fase 4">GENERAR COTIZACIÓN</button>
-          </div>
-        </form>
-        <p id="mensaje">
-          {cotizacion
-            ? `Cotización N.º ${cotizacion.idCotizacion} registrada. Los importes mostrados son los guardados; los cambios en las líneas no se guardan en esta fase.`
-            : orden
-              ? "Orden encontrada. Los detalles del diagnóstico son una vista previa; la cotización aún no está registrada y sus totales no están disponibles. Guardar, agregar y eliminar estarán disponibles en fase 4."
-              : codigo
-                ? "Orden no encontrada. Verifica el código e inténtalo de nuevo."
-                : "Escribe el código de la orden de trabajo. Guardar, agregar y eliminar estarán disponibles en fase 4."}
-        </p>
+        </div>
+        <CotizacionEditor
+          key={`${codigo}-${cotizacion?.idCotizacion ?? "nueva"}`}
+          codigo={orden?.codigoOrden ?? ""}
+          iniciales={filas}
+          guardada={Boolean(cotizacion)}
+          totales={cotizacion ? {
+            subtotal: cotizacion.subtotal.toFixed(2),
+            impuesto: cotizacion.impuesto.toFixed(2),
+            total: cotizacion.total.toFixed(2),
+          } : undefined}
+        />
       </div>
     </WorkshopShell>
   );
