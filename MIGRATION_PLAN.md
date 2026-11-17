@@ -1,24 +1,25 @@
 # Plan de migración — fase 0 (auditoría; sin implementación)
 
-Rama de trabajo: `migration/nextjs-typescript`; referencia: `main` en otra carpeta para ejecutar `dev/linux-dev.sh`. No modificar `main` ni `v1-windows`. La aprobación de este plan precede cualquier scaffold o instalación. **Decisión de ubicación:** conservar el PHP en esta rama solo como referencia durante la migración y crear Next.js en `web/`, sin borrar ni mover archivos existentes; `main` conserva PHP y permanece intacta. Esto sustituye el objetivo inicial de Next.js en la raíz para evitar una eliminación prematura; el comando de arranque se ejecutará desde `web/`.
+Rama de trabajo: `migration/nextjs-typescript`, rebasada sobre `main` **9d77a8a**; referencia PHP: `main` en otra carpeta para ejecutar `dev/linux-dev.sh`. No modificar `main` ni `v1-windows`. La aprobación del baseline corregido habilita la fase 1, no las fases posteriores. **Ubicación:** conservar PHP en esta rama como referencia y crear Next.js en `web/`, sin borrar ni mover archivos existentes; `main` permanece intacta.
 
 ## 1. Tecnologías reales y fuentes
 
 - Código actual: PHP sin framework, PDO/MySQL, sesiones PHP, HTML5, JavaScript nativo y `CSS/AUTOMOTRIZ.CSS`; MariaDB local por `dev/linux-dev.sh`. `PHP/conexion.php` consume `TALLER_DB_HOST`, `TALLER_DB_NAME`, `TALLER_DB_USER`, `TALLER_DB_PASS`. El dump declara servidor MariaDB **10.11.16** y PHP **8.3.36**; el README también indica PHP 8.3/MariaDB 10.11. La afirmación de PHP 8.5/MariaDB 11.8 no se puede confirmar desde el código ni el dump; son versiones de entorno posibles, no requisito verificado.
 - Referencia funcional: `INDEX.php`, `VISTAS/LOGIN.HTML`, `VISTAS/INICIO.php`, `VISTAS/COTIZACIÓN.php`, `VISTAS/PAGOS.php`, `PHP/*.php` y el dump. No migrar `INDEX.HTML`, `VISTAS/INICIO.HTML`, `VISTAS/COTIZACIÓN.HTML`, `VISTAS/PAGOS.HTML` (prototipos localStorage). `VISTAS/LOGIN.HTML` sí es el login vivo.
 - Documentos locales leídos: `Entregable No1 IngSII.pdf` (CU-08/04/05, RF/RNF y maquetas) y `FASE2. DESEÑO DEL SOFTWARE. ENTREGABLE II_3814102cc8cc490371e3aca0f4600ee8.pdf` (arquitectura, trazabilidad y diagramas). Son diseño aspiracional: sus componentes, asignación de mecánicos, estados y respaldos no prueban implementación. Figma devuelve metadatos HTML, no contenido de diseño inspeccionable; usar HTML/CSS implementado como fuente visual y declarar esta limitación en comparación de capturas.
+- **Oráculo PHP actualizado (`main` 9d77a8a):** siete correcciones verificadas en `README.md` («Correcciones de implementación (fase 3)»): permisos recepcionista en consultas/pago (403), id real del pago antes del commit, estado/saldo y abonos UI, única cotización por orden (409 y UNIQUE), contadores BD en `PHP/resumen.php`, validación de longitudes y errores de negocio 400/409 o interno 500 genérico, trazabilidad RF/CU en README. La migración replica este baseline, no las deficiencias anteriores.
 
 ## 2. Matriz de equivalencia y alcance
 
 | Caso / función | Estado PHP comprobado | Referencia | Objetivo Next.js |
 |---|---|---|---|
 | Login, selección de rol, sesión y cierre | Implementado; usuario+contraseña bcrypt; comparación del rol elegido | `VISTAS/LOGIN.HTML`, `PHP/validar_login.php`, `PHP/proteger_sesion.php`, `PHP/cerrar_sesion.php` | Auth.js Credentials+JWT; rol de sesión minúsculo; acceso denegado 403 por rol incorrecto |
-| Inicio y accesos por rol | Parcial: menú por rol, contadores en cero/localStorage | `VISTAS/INICIO.php` | Contadores reales en PostgreSQL y mismos accesos |
+| Inicio y accesos por rol | Implementado: menú por rol y contadores BD (`PHP/resumen.php`) | `VISTAS/INICIO.php`, `PHP/resumen.php` | Mismos contadores y accesos en PostgreSQL |
 | CU-08: listar, seleccionar y actualizar orden | Implementado: cliente/vehículo de la orden seleccionada en solo lectura; actualiza diagnóstico 1:1 y reemplaza repuestos sin duplicar orden | `INDEX.php`, `PHP/listar_ordenes.php`, `PHP/consultar_diagnostico.php`, `PHP/guardar_diagnostico.php` | Mismo flujo transaccional y permisos de mecánico |
 | CU-08: nueva orden | Implementado dentro de módulo de mecánico: busca cliente por nombre+apellidos, placa única, genera código y crea orden+diagnóstico | `INDEX.php`, `PHP/guardar_diagnostico.php` | Preservar comportamiento, sin crear módulo separado de recepción |
 | CU-04: precarga y edición de líneas | Implementado: consulta por código, precarga diagnóstico/repuestos y permite editar líneas antes de guardar; **no** edición posterior de cotización persistida | `VISTAS/COTIZACIÓN.php`, `PHP/consultar_orden.php`, `PHP/guardar_cotizacion.php` | Misma edición antes de guardar; no inventar edición posterior |
-| CU-04: cálculo y persistencia | Implementado: subtotal+7 % redondeado en servidor; permite varias cotizaciones para una orden | `PHP/guardar_cotizacion.php`, `cotizaciones` | Cálculo decimal en servidor; impedir duplicados por orden (decisión explícita de esta migración) |
-| CU-05: cobro y estado de cuenta | Parcial: backend permite abonos y limita saldo; UI exige pago exacto y presenta estado fijo; respuesta usa `lastInsertId()` tras commit | `VISTAS/PAGOS.php`, `PHP/registrar_pago.php`, `PHP/consultar_pagos.php` | UI permite abonos; saldo SUM(pagos); estado Pagado solo si saldo cero; devolver ID capturado antes del commit |
+| CU-04: cálculo y persistencia | Implementado: subtotal+7 % redondeado en servidor; una cotización por orden (UNIQUE y segundo intento 409) | `PHP/guardar_cotizacion.php`, `cotizaciones` | Cálculo decimal y unicidad con 409 |
+| CU-05: cobro y estado de cuenta | Implementado: UI permite abonos y muestra saldo/estado reales; backend limita saldo, bloquea cuentas pagadas y devuelve ID capturado antes de commit | `VISTAS/PAGOS.php`, `PHP/registrar_pago.php`, `PHP/consultar_pagos.php` | Replicar abonos, estado derivado e ID real |
 | Inventario / stock | Parcial: endpoint puede descontar/restituir stock si se referencia repuesto de inventario, pero no hay CRUD ni stock real en seed | `PHP/guardar_diagnostico.php`, `inventario_repuesto` vacío | Modelar tabla y repuestos utilizados; no implementar CRUD ni descuento real de stock sin aprobación |
 | Asignación por gerente, cliente, reportes, estados de orden, factura/impresión | Solo documentados o incompletos; sin flujo de usuario operativo | PDFs (RF-04/07/08/11, CU-06/07/09); `estado_orden` solo columna | Pendientes fuera de alcance |
 
@@ -38,7 +39,7 @@ Conservar clases y jerarquía del marcado; importar `CSS/AUTOMOTRIZ.CSS` globalm
 
 ### Definiciones exactas de las cuatro tarjetas de Inicio
 
-Consultas independientes, globales para ambos roles y ejecutadas con la misma instantánea de lectura. «Cotizaciones pendientes» significa órdenes diagnosticadas sin cotización; «Pagos pendientes» significa cotizaciones emitidas con saldo positivo. «Reparaciones activas» significa diagnósticos de órdenes cuyo `estado_orden` es `Abierta` (sin máquina de estados nueva); una cotización no cambia este estado. Contar entidades, no filas de detalle ni pagos:
+Consultas independientes, globales para ambos roles y ejecutadas con la misma instantánea de lectura. «Cotizaciones pendientes» significa órdenes diagnosticadas sin cotización; «Reparaciones activas» significa órdenes diagnosticadas sin cotización totalmente pagada (sin cotización o con saldo positivo); «Pagos pendientes» significa cotizaciones emitidas con saldo positivo. No usar `estado_orden = 'Abierta'`: no se actualiza con el cobro. Contar entidades, no filas de detalle ni pagos:
 
 ```sql
 -- Órdenes registradas
@@ -51,10 +52,17 @@ WHERE NOT EXISTS (
   SELECT 1 FROM cotizaciones c WHERE c.id_orden = o.id_orden
 );
 
--- Reparaciones activas (diagnósticos en órdenes abiertas)
-SELECT COUNT(*) FROM diagnostico_reparacion d
-JOIN ordenes_servicio o ON o.id_orden = d.id_orden
-WHERE o.estado_orden = 'Abierta';
+-- Reparaciones activas (diagnóstico sin cotización totalmente pagada)
+SELECT COUNT(*) FROM ordenes_servicio o
+JOIN diagnostico_reparacion d ON d.id_orden = o.id_orden
+WHERE NOT EXISTS (
+  SELECT 1 FROM cotizaciones c
+  WHERE c.id_orden = o.id_orden
+    AND c.total <= COALESCE((
+      SELECT SUM(p.monto_recibido) FROM pago_cuenta p
+      WHERE p.id_cotizacion = c.id_cotizacion
+    ), 0)
+);
 
 -- Pagos pendientes (cotizaciones emitidas con saldo positivo, incluye abonos)
 SELECT COUNT(*) FROM cotizaciones c
@@ -71,15 +79,15 @@ Origen `BASE DE DATO/taller_automotriz.sql`: **11 tablas**; seed equivalente con
 
 Relaciones: `clientes` 1:N `vehiculos` 1:N `ordenes_servicio`; orden 1:1 `diagnostico_reparacion` 1:N `repuestos_utilizados` N:1 opcional `inventario_repuesto`; orden 1:N `cotizaciones` 1:N `detalle_cotizacion` y 1:N `pago_cuenta`; pago también N:1 orden; `roles` 1:N `usuarios`. En PostgreSQL nueva unicidad `cotizaciones.id_orden` para impedir duplicados, además de existentes `vehiculos.placa`, `ordenes_servicio.codigo_orden`, `usuarios.usuario`, `diagnostico_reparacion.id_orden`. Índices restantes en FKs como dump. FKs `onDelete: Restrict`; campo `vehiculos.año` pasa a `anio` en modelo y UI (sin carácter especial en columna PostgreSQL). PK `Int @id @default(autoincrement())`, dinero `Decimal @db.Decimal(10,2)`, fecha `DateTime`, `longtext` → `String`, estados/tipos `String`, kilometraje `Float?` (origen `double`); respetar longitudes varchar mediante validación y, donde corresponda, `@db.VarChar(n)`. Preservar nulos/defaults y secuencias posteriores al seed.
 
-**Decisiones confirmadas:** una cotización por orden mediante `@unique` y error de dominio claro; el dump no contiene duplicados, por lo que seed compatible. **Abonos habilitados en la UI:** el monto puede ser cualquier valor positivo hasta el saldo pendiente, incluido el pago total. No permitir actualización posterior de una cotización pagada; edición de líneas se refiere al formulario **antes** del guardado. Dedupe de clientes por nombre+apellidos es débil (homónimos); no sustituir por email ni ID sin solicitud.
+**Decisiones confirmadas en el baseline PHP:** una cotización por orden mediante `@unique` y segundo intento 409; el dump no contiene duplicados, por lo que seed compatible. **Abonos habilitados en la UI:** el monto puede ser cualquier valor positivo hasta el saldo pendiente, incluido el pago total. No permitir actualización posterior de una cotización pagada; edición de líneas se refiere al formulario **antes** del guardado. Dedupe de clientes por nombre+apellidos es débil (homónimos); no sustituir por email ni ID sin solicitud.
 
 ## 5. Reglas, diferencias y riesgos
 
 - Totales, IVA 7 % y redondeo a centavos solo autorizados por servidor con aritmética decimal. Líneas `Servicio`/`Repuesto`, cantidad entera positiva, precio no negativo. Código `AT-<aammdd>-<4 dígitos>` único, generado si falta, manejar colisión de generación. Placa normalizada a mayúsculas y nunca transferir una placa a otro cliente.
-- Pagos positivos ≤ saldo de `cotización.total − SUM(pago_cuenta.monto_recibido)`; guardar con transacción y exclusión de concurrencia sobre cotización para evitar sobrepago. Estado derivado `Pagado` si saldo = 0; si no, `Pendiente`. Verificar consistencia `pago_cuenta.id_orden` con `id_cotizacion`. Capturar id antes del commit. Proteger consultas y escritura de pagos por rol recepcionista (PHP actual solo pide sesión).
+- Pagos positivos ≤ saldo de `cotización.total − SUM(pago_cuenta.monto_recibido)`; guardar con transacción y exclusión de concurrencia sobre cotización para evitar sobrepago. Estado derivado `Pagado` si saldo = 0; si no, `Pendiente`. Verificar consistencia `pago_cuenta.id_orden` con `id_cotizacion`. Capturar id antes del commit. Consultas y escritura de pagos exigen recepcionista, como el baseline PHP actualizado.
 - Zod y errores claros para campos y longitudes, no exponer errores SQL. Autorización del lado servidor en todas las rutas/acciones y vistas; un rol incorrecto recibe 403. Hashes y rol `id_rol` son fuente de verdad.
 - Riesgos: divergencia PHP/diseño PDF (asignación, stock, facturación, respaldos, rendimiento y SLA no implementados); dos cotizaciones futuras son incompatibles con unicidad nueva; cambio MySQL→PostgreSQL exige revisar precisión, zona horaria y secuencias. El seed incluye cuentas y contraseñas demo: exclusivamente entorno de desarrollo, nunca despliegue público. UI cotización posterior al diagnóstico puede quedar desactualizada si se cambia diagnóstico: no recalcular cotizaciones ya guardadas de manera implícita. Vercel y Neon gratuitos sujetos a cuotas y condiciones actuales; no garantizan RNF-04 99,5 %, respaldo diario RNF-05 ni 50 usuarios simultáneos RNF-07.
-- Correcciones previstas **solo** las enumeradas: contadores BD, estado por suma, id de pago, permisos de consultas/pago, unicidad cotización, abonos UI, validación y errores, login por usuario documentado. Auditoría `id_usuario` en órdenes/pagos queda pendiente opcional. No otras correcciones sin registrar y pedir aprobación.
+- Correcciones del baseline PHP **ya implementadas y a reproducir**, no nuevas propuestas: contadores BD, estado por suma, id de pago, permisos de consultas/pago, unicidad cotización, abonos UI, validación de longitudes y errores, login por usuario documentado. `id_usuario` en órdenes/pagos y CSRF/cabeceras quedan pendientes opcionales, fuera de esta migración. No otras correcciones sin registrar y pedir aprobación.
 
 **Versiones objetivo fijadas:** Node.js 22.x (desarrollo y despliegue; fijar en `engines`), Next.js **15.5.29**, React y React DOM **19.0.0**, Prisma CLI y cliente **6.0.0** (mismo número exacto), PostgreSQL **16** mediante imagen `postgres:16-alpine`. Fijar dependencias npm sin `^`/`~` y commitear lockfile en fase 1; el tag Docker fija la serie mayor, no el digest ni la versión menor de Alpine. Verificar compatibilidad en fase 1 antes de instalar; cualquier cambio de versiones requiere aprobación.
 
@@ -107,6 +115,7 @@ Cada fase termina con evidencia de comandos/resultados y espera aprobación ante
 - [ ] Abono parcial desde UI deja saldo positivo y estado `Pendiente`; datos persisten en PostgreSQL.
 - [ ] Pago total deja saldo cero y estado `Pagado`; se devuelve `id_pago` real.
 - [ ] Sobrepago y pago posterior a liquidación rechazados; consultas y registro de pagos restringidos a recepcionista (403).
+- [ ] Contadores (órdenes/cotizaciones pendientes/reparaciones activas/pagos pendientes): seed `2/0/0/0`; orden diagnosticada sin cotizar `3/1/1/0`; cotizada sin pagar `3/0/1/1`; tras abono `3/0/1/1`; tras pago total `3/0/0/0`.
 - [ ] Las cinco pantallas funcionan y capturas PHP/Next a 1360×950 permiten comparar fidelidad visual.
 - [ ] `npm run build`, `tsc --noEmit` y lint pasan; pruebas reproducibles de los tres CU y permisos.
 - [ ] `main` mantiene historial y árbol intactos; la rama de migración no modifica la versión PHP de `main`.
