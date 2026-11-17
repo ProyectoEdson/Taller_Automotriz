@@ -39,6 +39,28 @@ async function main() {
     { idRepuestoUtil: 4, idDiagnostico: 1, cantidad: 1, precioUnitario: "15.00", totalItem: "15.00", descripcion: "Disco de frenos" },
     { idRepuestoUtil: 5, idDiagnostico: 2, cantidad: 1, precioUnitario: "50.00", totalItem: "50.00", descripcion: "prueba" },
   ], skipDuplicates: true });
+  await db.inventarioRepuesto.createMany({ data: [
+    { idRepuesto: 1, nombre: "Filtro de aceite", descripcion: "Filtro para lubricación del motor", stockActual: 20, stockMinimo: 5, precioBase: "8.50" },
+    { idRepuesto: 2, nombre: "Filtro de aire", descripcion: "Filtro de admisión de aire", stockActual: 15, stockMinimo: 5, precioBase: "10.00" },
+    { idRepuesto: 3, nombre: "Aceite 10W-30", descripcion: "Aceite para motor, envase de 1 litro", stockActual: 30, stockMinimo: 10, precioBase: "12.00" },
+    { idRepuesto: 4, nombre: "Pastillas de freno", descripcion: "Juego de pastillas delanteras", stockActual: 12, stockMinimo: 4, precioBase: "28.00" },
+    { idRepuesto: 5, nombre: "Bujías", descripcion: "Bujías de encendido", stockActual: 25, stockMinimo: 6, precioBase: "6.50" },
+    { idRepuesto: 6, nombre: "Batería 12V", descripcion: "Batería para automóvil", stockActual: 8, stockMinimo: 2, precioBase: "75.00" },
+    { idRepuesto: 7, nombre: "Refrigerante", descripcion: "Líquido refrigerante para motor", stockActual: 20, stockMinimo: 5, precioBase: "9.50" },
+    { idRepuesto: 8, nombre: "Filtro de combustible", descripcion: "Filtro para sistema de combustible", stockActual: 10, stockMinimo: 3, precioBase: "15.00" },
+    { idRepuesto: 9, nombre: "Correa de distribución", descripcion: "Correa para sincronización del motor", stockActual: 6, stockMinimo: 2, precioBase: "45.00" },
+    { idRepuesto: 10, nombre: "Limpiaparabrisas", descripcion: "Juego de escobillas", stockActual: 15, stockMinimo: 4, precioBase: "14.00" },
+  ], skipDuplicates: true });
+  await db.servicio.createMany({ data: [
+    { idServicio: 1, nombre: "Cambio de aceite", descripcion: "Sustitución del aceite del motor", precio: "15.00" },
+    { idServicio: 2, nombre: "Alineación", descripcion: "Ajuste de dirección y ruedas", precio: "25.00" },
+    { idServicio: 3, nombre: "Balanceo", descripcion: "Equilibrado de neumáticos", precio: "20.00" },
+    { idServicio: 4, nombre: "Diagnóstico computarizado", descripcion: "Revisión mediante escáner", precio: "30.00" },
+    { idServicio: 5, nombre: "Cambio de pastillas", descripcion: "Sustitución de pastillas de freno", precio: "25.00" },
+    { idServicio: 6, nombre: "Revisión de frenos", descripcion: "Inspección del sistema de frenado", precio: "15.00" },
+    { idServicio: 7, nombre: "Cambio de batería", descripcion: "Instalación de batería nueva", precio: "10.00" },
+    { idServicio: 8, nombre: "Mantenimiento preventivo", descripcion: "Revisión general del vehículo", precio: "45.00" },
+  ], skipDuplicates: true });
   await db.cotizacion.createMany({ data: [
     { idCotizacion: 1, idOrden: 1, subtotal: "70.00", impuesto: "4.90", total: "74.90", fechaEmision: new Date("2026-11-15T20:54:01Z") },
     { idCotizacion: 2, idOrden: 2, subtotal: "50.00", impuesto: "3.50", total: "53.50", fechaEmision: new Date("2026-11-15T21:38:07Z") },
@@ -62,6 +84,7 @@ async function main() {
     ["repuestos_utilizados", "id_repuesto_util"], ["inventario_repuesto", "id_repuesto"],
     ["cotizaciones", "id_cotizacion"], ["detalle_cotizacion", "id_detalle"],
     ["pago_cuenta", "id_pago"], ["roles", "id_rol"], ["usuarios", "id_usuario"],
+    ["servicios", "id_servicio"],
   ] as const) {
     await db.$queryRawUnsafe(
       `SELECT setval(pg_get_serial_sequence('"${table}"', '${key}'), COALESCE((SELECT MAX("${key}") FROM "${table}"), 1), (SELECT COUNT(*) > 0 FROM "${table}"))`,

@@ -101,6 +101,7 @@ Aplicación web para la operación diaria de un taller automotriz: registro de c
 │   │   ├── schema.prisma
 │   │   ├── migrations/
 │   │   ├── seed.ts
+│   │   ├── catalog-data.sql
 │   │   └── counts.sql
 │   ├── scripts/phase5-matrix.mjs
 │   ├── docs/
@@ -163,7 +164,7 @@ Abrir http://localhost:3000/login.
 
 ## Base de datos
 
-El esquema de Prisma define **11 tablas**:
+El esquema de Prisma define **12 tablas**:
 
 | Tabla | Propósito |
 | --- | --- |
@@ -176,6 +177,7 @@ El esquema de Prisma define **11 tablas**:
 | `cotizaciones` | Cabecera de cotización con subtotal, impuesto y total. |
 | `detalle_cotizacion` | Líneas de servicio o repuesto de la cotización. |
 | `pago_cuenta` | Pagos y abonos aplicados a una cotización. |
+| `servicios` | Catálogo de servicios de taller con descripción y precio. |
 | `roles` | Catálogo de roles: mecánico y recepcionista. |
 | `usuarios` | Usuarios con contraseña hasheada y rol. |
 
@@ -188,6 +190,7 @@ clientes 1 ── N vehiculos 1 ── N ordenes_servicio 1 ── 1 diagnostico
                                               └── 1 cotizaciones 1 ── N detalle_cotizacion
                                                                   └── N pago_cuenta
 
+servicios        (catálogo independiente)
 roles 1 ── N usuarios
 ```
 
@@ -196,11 +199,14 @@ Comandos de base de datos:
 ```bash
 npx prisma migrate deploy   # aplicar migraciones existentes
 npx prisma migrate dev      # crear una migración durante desarrollo
-npx prisma db seed          # cargar datos de demostración
+npx prisma db seed          # cargar datos de demostración y catálogos
+npx prisma db execute --file prisma/catalog-data.sql --schema prisma/schema.prisma
 npx prisma studio           # explorar la base en el navegador
 ```
 
 El seed restaura el escenario base: 2 órdenes, 0 cotizaciones pendientes, 0 reparaciones activas y 0 pagos pendientes, además de los usuarios de demostración.
+
+El catálogo inicial incluye **10 repuestos** con stock, stock mínimo y precio, y **8 servicios de taller**. Se carga con el seed o, sobre una base existente, con `prisma/catalog-data.sql`; ese archivo es idempotente y actualiza por nombre.
 
 ## API
 

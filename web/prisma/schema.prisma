@@ -89,6 +89,15 @@ model InventarioRepuesto {
   @@map("inventario_repuesto")
 }
 
+model Servicio {
+  idServicio  Int     @id @default(autoincrement()) @map("id_servicio")
+  nombre      String  @unique @db.VarChar(100)
+  descripcion String?
+  precio      Decimal @db.Decimal(10, 2)
+
+  @@map("servicios")
+}
+
 model Cotizacion {
   idCotizacion Int                 @id @default(autoincrement()) @map("id_cotizacion")
   idOrden      Int                 @unique @map("id_orden")
