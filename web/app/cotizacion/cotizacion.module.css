@@ -1,0 +1,159 @@
+.cotizacion {
+    width: 100%;
+}
+
+.cotizacion :global(.info-orden-cotizacion) {
+    background: #eeeeee;
+    padding: 22px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.cotizacion :global(.info-orden-cotizacion h3),
+.cotizacion :global(.detalle-cotizacion h3) {
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.cotizacion :global(.datos-orden-cotizacion) {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 13px 18px;
+    align-items: center;
+}
+
+.cotizacion :global(.datos-orden-cotizacion label) {
+    font-weight: 600;
+}
+
+.cotizacion :global(.datos-orden-cotizacion input),
+.cotizacion :global(.datos-orden-cotizacion select) {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.cotizacion :global(.datos-orden-cotizacion input[readonly]) {
+    background: #f8f8f8;
+    color: #555555;
+}
+
+.cotizacion :global(.detalle-cotizacion) {
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.cotizacion :global(.tabla-cotizacion) {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cotizacion :global(.tabla-cotizacion th),
+.cotizacion :global(.tabla-cotizacion td) {
+    padding: 13px 12px;
+    text-align: left;
+    border-bottom: 1px solid #dddddd;
+}
+
+.cotizacion :global(.tabla-cotizacion th) {
+    background: #eeeeee;
+    font-weight: 700;
+}
+
+.cotizacion :global(.tabla-cotizacion input),
+.cotizacion :global(.tabla-cotizacion select) {
+    width: 100%;
+    min-width: 65px;
+    padding: 9px;
+    box-sizing: border-box;
+}
+
+.cotizacion :global(.tabla-cotizacion select) {
+    min-width: 110px;
+}
+
+.cotizacion :global(.resumen-cotizacion) {
+    width: 300px;
+    max-width: 100%;
+    margin: 22px 0 0 auto;
+}
+
+.cotizacion :global(.fila-resumen) {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.cotizacion :global(.fila-resumen.total-final) {
+    border-top: 2px solid #dddddd;
+    margin-top: 8px;
+    padding-top: 14px;
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.cotizacion :global(.acciones-cotizacion) {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.cotizacion :global(.acciones-cotizacion button) {
+    background: #922c48;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 13px 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.cotizacion :global(.acciones-cotizacion button:hover:not(:disabled)) {
+    background: #742139;
+}
+
+.cotizacion :global(.acciones-cotizacion button:disabled),
+.cotizacion :global(.btn-eliminar-detalle:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cotizacion :global(.btn-eliminar-detalle) {
+    background: #922c48;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.cotizacion :global(#mensaje) {
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+@media (max-width: 800px) {
+    .cotizacion :global(.datos-orden-cotizacion) {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .cotizacion :global(.datos-orden-cotizacion input) {
+        margin-bottom: 10px;
+    }
+
+    .cotizacion :global(.tabla-contenedor) {
+        overflow-x: auto;
+    }
+
+    .cotizacion :global(.tabla-cotizacion) {
+        min-width: 800px;
+    }
+}

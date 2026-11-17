@@ -35,8 +35,7 @@ export default function Login() {
   }
 
   return (
-    <main className="login-body-wrapper">
-      <div className="login-frame">
+    <main className="login-frame">
         <header className="login-header">
           <svg viewBox="0 0 80 65" className="auto" aria-hidden="true">
             <path d="M15 42 L20 17 Q22 7 32 7 H49 Q59 7 62 17 L67 42 V55 H56 V48 H24 V55 H13 V42 Z" />
@@ -88,7 +87,6 @@ export default function Login() {
             <p role="alert">{mensaje}</p>
           </form>
         </section>
-      </div>
     </main>
   );
 }
