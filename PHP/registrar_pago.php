@@ -21,6 +21,20 @@ if (!isset($_SESSION["id_usuario"]) || !isset($_SESSION["rol"])) {
     exit;
 }
 
+// Solo recepción registra pagos (RNF-01).
+
+if ($_SESSION["rol"] !== "recepcionista") {
+
+    http_response_code(403);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => "No tienes permiso para registrar pagos."
+    ]);
+
+    exit;
+}
+
 // Verificar método POST
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -208,6 +222,10 @@ try {
 
     ]);
 
+    // Capturar el id antes del commit: COMMIT reinicia lastInsertId().
+
+    $idPago = (int)$conexion->lastInsertId();
+
     // Calcular saldo restante
 
     $nuevoSaldo = round($saldoPendiente - $montoRecibido, 2);
@@ -222,13 +240,32 @@ try {
         "mensaje" => $nuevoSaldo <= 0
             ? "Pago completado correctamente."
             : "Abono registrado correctamente.",
-        "id_pago" => $conexion->lastInsertId(),
+        "id_pago" => $idPago,
         "monto_pagar" => $montoPagar,
         "monto_recibido" => $montoRecibido,
         "saldo_pendiente" => $nuevoSaldo,
         "estado_pago" => $nuevoSaldo <= 0
             ? "Pagado"
             : "Pendiente"
+
+    ]);
+
+} catch (PDOException $error) {
+
+    if ($conexion->inTransaction()) {
+
+        $conexion->rollBack();
+
+    }
+
+    error_log("registrar_pago: " . $error->getMessage());
+
+    http_response_code(500);
+
+    echo json_encode([
+
+        "exito" => false,
+        "mensaje" => "No se pudo registrar el pago por un error interno."
 
     ]);
 
@@ -240,13 +277,12 @@ try {
 
     }
 
-    http_response_code(500);
+    http_response_code(409);
 
     echo json_encode([
 
         "exito" => false,
-        "mensaje" => "No se pudo registrar el pago.",
-        "detalle" => $error->getMessage()
+        "mensaje" => $error->getMessage()
 
     ]);
 

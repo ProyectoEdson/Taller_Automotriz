@@ -389,56 +389,43 @@ $rolMostrar = strtoupper($rol);
 
 <script>
 
-// ACTUALIZAR RESUMEN GENERAL
+// ACTUALIZAR RESUMEN GENERAL DESDE LA BASE DE DATOS
 
-function actualizarResumen() {
+async function actualizarResumen() {
 
-    const diagnosticos = JSON.parse(
-        localStorage.getItem('diagnosticosTaller') || '[]'
-    );
+    try {
 
-    const cotizaciones = JSON.parse(
-        localStorage.getItem('cotizacionesTaller') || '[]'
-    );
+        const respuesta = await fetch('../PHP/resumen.php');
 
-    const pagos = JSON.parse(
-        localStorage.getItem('pagosTaller') || '[]'
-    );
+        const resultado = await respuesta.json();
 
+        if (!respuesta.ok || !resultado.exito) {
 
-    // Órdenes registradas
+            throw new Error(
+                resultado.mensaje || 'No se pudo cargar el resumen.'
+            );
 
-    document.getElementById('totalOrdenes').textContent =
-        diagnosticos.length;
+        }
 
+        const resumen = resultado.resumen;
 
-    // Cotizaciones generadas
+        document.getElementById('totalOrdenes').textContent =
+            resumen.ordenes;
 
-    document.getElementById('totalCotizaciones').textContent =
-        cotizaciones.length;
+        document.getElementById('totalCotizaciones').textContent =
+            resumen.cotizaciones_pendientes;
 
+        document.getElementById('totalReparaciones').textContent =
+            resumen.reparaciones_activas;
 
-    // Reparaciones activas
+        document.getElementById('totalPagos').textContent =
+            resumen.pagos_pendientes;
 
-    document.getElementById('totalReparaciones').textContent =
-        diagnosticos.length;
+    } catch (error) {
 
+        console.error('No se pudo cargar el resumen:', error);
 
-    // Calcular pagos pendientes
-
-    const pagosPendientes = cotizaciones.filter(cotizacion => {
-
-        const pago = pagos.find(p =>
-            p.orden === cotizacion.orden
-        );
-
-        return !pago || pago.estado !== 'Pagado';
-
-    });
-
-
-    document.getElementById('totalPagos').textContent =
-        pagosPendientes.length;
+    }
 
 }
 

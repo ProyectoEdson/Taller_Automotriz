@@ -202,6 +202,8 @@ if ($_SESSION["rol"] !== "recepcionista") {
                             Pagado
                         </div>
 
+                        <p class="detalle-estado" id="detalleEstado"></p>
+
                     </section>
 
                 </div>
@@ -326,21 +328,57 @@ async function cargarListaCotizaciones() {
 
     try {
 
-        const respuesta = await fetch(
-            "../PHP/consultar_cotizaciones.php"
-        );
+        const [respuestaCotizaciones, respuestaPagos] =
+            await Promise.all([
+                fetch("../PHP/consultar_cotizaciones.php"),
+                fetch("../PHP/consultar_pagos.php")
+            ]);
 
-        const resultado = await respuesta.json();
+        const resultado = await respuestaCotizaciones.json();
 
-        if (!respuesta.ok || !resultado.exito) {
+        const resultadoPagos = await respuestaPagos.json();
+
+        if (!respuestaCotizaciones.ok || !resultado.exito) {
 
             throw new Error(
-                resultado.mensaje || "No se pudieron consultar las cotizaciones."
+                resultado.mensaje ||
+                "No se pudieron consultar las cotizaciones."
             );
 
         }
 
-        cotizaciones = resultado.cotizaciones || [];
+        if (!respuestaPagos.ok || !resultadoPagos.exito) {
+
+            throw new Error(
+                resultadoPagos.mensaje ||
+                "No se pudieron consultar los pagos."
+            );
+
+        }
+
+        const pagosPorCotizacion = new Map(
+            (resultadoPagos.pagos || []).map(pago => [
+                String(pago.id_cotizacion),
+                pago
+            ])
+        );
+
+        cotizaciones = (resultado.cotizaciones || []).map(cotizacion => {
+
+            const pago = pagosPorCotizacion.get(
+                String(cotizacion.id_cotizacion)
+            );
+
+            return {
+                ...cotizacion,
+                total_pagado: pago ? Number(pago.total_pagado) : 0,
+                saldo_pendiente: pago
+                    ? Number(pago.saldo_pendiente)
+                    : Number(cotizacion.total),
+                estado_pago: pago ? pago.estado_pago : 'Pendiente'
+            };
+
+        });
 
         cotizaciones.forEach(cotizacion => {
 
@@ -349,7 +387,8 @@ async function cargarListaCotizaciones() {
             opcion.value = cotizacion.id_cotizacion;
 
             opcion.textContent =
-                cotizacion.codigo_orden + ' - ' + cotizacion.cliente;
+                cotizacion.codigo_orden + ' - ' + cotizacion.cliente +
+                (cotizacion.estado_pago === 'Pagado' ? ' [Pagada]' : '');
 
             selector.appendChild(opcion);
 
@@ -357,7 +396,12 @@ async function cargarListaCotizaciones() {
 
         if (cotizaciones.length > 0) {
 
-            selector.value = cotizaciones[0].id_cotizacion;
+            const pendiente = cotizaciones.find(
+                cotizacion => cotizacion.estado_pago !== 'Pagado'
+            );
+
+            selector.value =
+                (pendiente || cotizaciones[0]).id_cotizacion;
 
             cargarOrdenSeleccionada();
 
@@ -439,6 +483,10 @@ function limpiarInformacion() {
 
     document.getElementById('flechaEstado').textContent = '↓';
 
+    document.getElementById('detalleEstado').textContent = '';
+
+    document.getElementById('monto').max = '';
+
     document.getElementById('btnRegistrarPago').disabled = true;
 
     cotizacionSeleccionada = null;
@@ -477,45 +525,83 @@ function cargarOrdenSeleccionada() {
     document.getElementById('placa').textContent =
         cotizacion.placa;
 
+    const total = Number(cotizacion.total);
+
+    const pagado = Number(cotizacion.total_pagado || 0);
+
+    const saldo = Math.max(
+        0,
+        Number(cotizacion.saldo_pendiente || total - pagado)
+    );
+
+    const pagada =
+        cotizacion.estado_pago === 'Pagado' || saldo <= 0.009;
+
     document.getElementById('totalPagar').textContent =
-        formatoDinero(cotizacion.total);
+        formatoDinero(pagada ? 0 : saldo);
 
-    document.getElementById('monto').value =
-        Number(cotizacion.total).toFixed(2);
+    const montoInput = document.getElementById('monto');
 
-    document.getElementById('monto').disabled = false;
+    montoInput.value = pagada ? '0.00' : saldo.toFixed(2);
 
-    document.getElementById('fecha').disabled = false;
+    montoInput.max = pagada ? '0' : saldo.toFixed(2);
 
-    document.getElementById('btnRegistrarPago').disabled = false;
+    montoInput.disabled = pagada;
+
+    document.getElementById('fecha').disabled = pagada;
+
+    document.getElementById('btnRegistrarPago').disabled = pagada;
 
     document.querySelectorAll(
         'input[name="metodo"]'
     ).forEach(input => {
 
-        input.disabled = false;
+        input.disabled = pagada;
 
         input.checked = input.value === 'Efectivo';
 
     });
 
+    document.getElementById('detalleEstado').textContent =
+        'Pagado: ' + formatoDinero(pagado) +
+        ' de ' + formatoDinero(total);
+
     establecerFechaActual();
 
-    // Estado inicial mientras se consulta el historial de pagos.
+    if (pagada) {
 
-    document.getElementById('estadoPendiente').textContent = 'Pendiente';
+        mostrarEstadoPagado();
 
-    document.getElementById('estadoPendiente').className =
-        'estado pendiente';
+    } else {
 
-    document.getElementById('estadoPagado').textContent = 'Pagado';
+        mostrarEstadoPendiente();
 
-    document.getElementById('estadoPagado').className =
-        'estado pendiente';
-
-    document.getElementById('flechaEstado').textContent = '↓';
+    }
 
     mostrarMensaje('');
+
+}
+
+
+// MOSTRAR ESTADO PENDIENTE
+
+function mostrarEstadoPendiente() {
+
+    const estadoPendiente =
+        document.getElementById('estadoPendiente');
+
+    const estadoPagado =
+        document.getElementById('estadoPagado');
+
+    estadoPendiente.textContent = 'Pendiente';
+
+    estadoPendiente.className = 'estado pendiente';
+
+    estadoPagado.textContent = 'Pagado';
+
+    estadoPagado.className = 'estado pendiente';
+
+    document.getElementById('flechaEstado').textContent = '↓';
 
 }
 
@@ -565,8 +651,6 @@ async function registrarPago() {
         'input[name="metodo"]:checked'
     );
 
-    const total = Number(cotizacionSeleccionada.total);
-
     // VALIDAR MONTO
 
     if (!Number.isFinite(monto) || monto <= 0) {
@@ -577,11 +661,13 @@ async function registrarPago() {
 
     }
 
-    if (Math.abs(monto - total) > 0.009) {
+    const saldo = Number(cotizacionSeleccionada.saldo_pendiente);
+
+    if (monto > saldo + 0.009) {
 
         alert(
-            'El monto recibido debe coincidir con el total de la cotización: ' +
-            formatoDinero(total)
+            'El monto recibido supera el saldo pendiente: ' +
+            formatoDinero(saldo)
         );
 
         return;
@@ -651,21 +737,27 @@ async function registrarPago() {
 
         }
 
-        // ACTUALIZAR INTERFAZ
+        // ACTUALIZAR EL ESTADO CON EL SALDO DEVUELTO
 
-        mostrarEstadoPagado();
+        cotizacionSeleccionada.total_pagado =
+            Number(cotizacionSeleccionada.total_pagado || 0) + monto;
 
-        document.getElementById('monto').disabled = true;
+        cotizacionSeleccionada.saldo_pendiente =
+            Number(resultado.saldo_pendiente);
 
-        document.getElementById('fecha').disabled = true;
+        cotizacionSeleccionada.estado_pago = resultado.estado_pago;
 
-        document.querySelectorAll(
-            'input[name="metodo"]'
-        ).forEach(input => input.disabled = true);
+        cargarOrdenSeleccionada();
 
-        mostrarMensaje(resultado.mensaje);
+        mostrarMensaje(
+            resultado.mensaje + ' Saldo: ' +
+            formatoDinero(resultado.saldo_pendiente)
+        );
 
-        alert(resultado.mensaje);
+        alert(
+            resultado.mensaje + '\nSaldo pendiente: ' +
+            formatoDinero(resultado.saldo_pendiente)
+        );
 
     } catch (error) {
 

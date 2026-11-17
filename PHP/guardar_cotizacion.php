@@ -7,6 +7,10 @@ header("Content-Type: application/json; charset=utf-8");
 
 require_once "conexion.php";
 
+class CotizacionDuplicadaException extends Exception
+{
+}
+
 // Verificar que el usuario haya iniciado sesión como recepcionista.
 
 if (
@@ -109,6 +113,26 @@ try {
     }
 
     $idOrden = $orden["id_orden"];
+
+    // Una sola cotización por orden (RF-09 / regla de negocio).
+
+    $sqlExistente = "SELECT id_cotizacion
+                     FROM cotizaciones
+                     WHERE id_orden = :id_orden
+                     LIMIT 1
+                     FOR UPDATE";
+
+    $consultaExistente = $conexion->prepare($sqlExistente);
+
+    $consultaExistente->execute([
+        ":id_orden" => $idOrden
+    ]);
+
+    if ($consultaExistente->fetchColumn()) {
+        throw new CotizacionDuplicadaException(
+            "Esta orden ya tiene una cotización registrada."
+        );
+    }
 
     // Validar y calcular los detalles.
 
@@ -233,6 +257,34 @@ try {
         "mensaje" => "Cotización registrada correctamente.",
         "id_cotizacion" => $idCotizacion
 
+    ]);
+
+} catch (CotizacionDuplicadaException $error) {
+
+    if ($conexion->inTransaction()) {
+        $conexion->rollBack();
+    }
+
+    http_response_code(409);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => $error->getMessage()
+    ]);
+
+} catch (PDOException $error) {
+
+    if ($conexion->inTransaction()) {
+        $conexion->rollBack();
+    }
+
+    error_log("guardar_cotizacion: " . $error->getMessage());
+
+    http_response_code(500);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => "No se pudo registrar la cotización por un error interno."
     ]);
 
 } catch (Exception $error) {

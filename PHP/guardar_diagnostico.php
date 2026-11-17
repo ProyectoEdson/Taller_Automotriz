@@ -89,7 +89,6 @@ if ($diagnostico === "" || $reparaciones === "") {
     exit;
 }
 
-
 if (!is_array($repuestos)) {
 
     echo json_encode([
@@ -126,7 +125,6 @@ if (!$idOrden) {
 
         exit;
     }
-
 
     if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
@@ -182,6 +180,20 @@ if (!$idOrden) {
 // =====================================
 // FUNCIONES DE APOYO
 // =====================================
+
+function validarLongitud($valor, $maximo, $campo) {
+
+    if ($valor !== "" && mb_strlen($valor, "UTF-8") > $maximo) {
+
+        throw new Exception(
+            "El campo " . $campo . " no puede superar " .
+            $maximo . " caracteres."
+        );
+
+    }
+
+}
+
 
 function campoDescripcionRepuestos($conexion) {
 
@@ -242,6 +254,17 @@ function registrarRepuestos($conexion, $idDiagnostico, $repuestos, $campoDescrip
     foreach ($repuestos as $repuesto) {
 
         $nombreRepuesto = trim($repuesto["nombre"] ?? "");
+
+        if (
+            $nombreRepuesto !== "" &&
+            mb_strlen($nombreRepuesto, "UTF-8") > 150
+        ) {
+
+            throw new Exception(
+                "El nombre del repuesto no puede superar 150 caracteres."
+            );
+
+        }
 
         $cantidad = filter_var(
             $repuesto["cantidad"] ?? null,
@@ -383,6 +406,20 @@ function generarCodigoOrden($conexion) {
 $campoDescripcion = null;
 
 try {
+
+    validarLongitud($diagnostico, 5000, "diagnóstico");
+    validarLongitud($reparaciones, 5000, "reparaciones");
+
+    if (!$idOrden) {
+        validarLongitud($nombre, 100, "nombre");
+        validarLongitud($primerApellido, 100, "primer apellido");
+        validarLongitud($segundoApellido, 100, "segundo apellido");
+        validarLongitud($telefono, 20, "teléfono");
+        validarLongitud($email, 100, "correo");
+        validarLongitud($marca, 50, "marca");
+        validarLongitud($modelo, 50, "modelo");
+        validarLongitud($placa, 15, "placa");
+    }
 
     $campoDescripcion = campoDescripcionRepuestos($conexion);
 
@@ -738,6 +775,23 @@ try {
         "id_orden" => (int)$idOrden
     ], JSON_UNESCAPED_UNICODE);
 
+
+} catch (PDOException $error) {
+
+    if ($conexion->inTransaction()) {
+
+        $conexion->rollBack();
+
+    }
+
+    error_log("guardar_diagnostico: " . $error->getMessage());
+
+    http_response_code(500);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => "No se pudo guardar el diagnóstico por un error interno."
+    ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $error) {
 

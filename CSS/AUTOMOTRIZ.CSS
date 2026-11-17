@@ -376,6 +376,13 @@ body {
     text-align: left;
 }
 
+.detalle-estado {
+    color: #666;
+    font-size: 14px;
+    margin: 12px 0 0;
+    text-align: center;
+}
+
 .estado {
     background: #e9e9e9;
     border: 2px solid #bd9292;
@@ -465,6 +472,12 @@ body {
 
 .acciones button:hover {
     background: #800000;
+}
+
+.acciones button:disabled {
+    background: #cbb7b7;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 /* =================================

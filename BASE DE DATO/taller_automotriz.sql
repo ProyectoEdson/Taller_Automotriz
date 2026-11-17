@@ -287,7 +287,7 @@ ALTER TABLE `clientes`
 --
 ALTER TABLE `cotizaciones`
   ADD PRIMARY KEY (`id_cotizacion`),
-  ADD KEY `id_orden` (`id_orden`);
+  ADD UNIQUE KEY `id_orden` (`id_orden`);
 
 --
 -- Indices de la tabla `detalle_cotizacion`

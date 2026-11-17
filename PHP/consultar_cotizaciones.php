@@ -19,6 +19,20 @@ if (!isset($_SESSION["id_usuario"]) || !isset($_SESSION["rol"])) {
     exit;
 }
 
+// Solo recepción gestiona cotizaciones (RNF-01).
+
+if ($_SESSION["rol"] !== "recepcionista") {
+
+    http_response_code(403);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => "No tienes permiso para consultar las cotizaciones."
+    ]);
+
+    exit;
+}
+
 // Conexión con la base de datos.
 
 require_once "conexion.php";

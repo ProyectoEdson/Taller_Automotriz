@@ -6,6 +6,19 @@ header("Content-Type: application/json; charset=utf-8");
 // Verificar que exista una sesión iniciada
 require_once "proteger_sesion.php";
 
+// Solo recepción consulta estados de cuenta (RNF-01).
+if ($_SESSION["rol"] !== "recepcionista") {
+
+    http_response_code(403);
+
+    echo json_encode([
+        "exito" => false,
+        "mensaje" => "No tienes permiso para consultar los pagos."
+    ]);
+
+    exit;
+}
+
 // Conectar con la base de datos
 require_once "conexion.php";
 

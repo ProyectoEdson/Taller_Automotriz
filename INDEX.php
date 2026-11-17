@@ -159,6 +159,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="nombre"
+                            maxlength="100"
                             placeholder="Nombre del cliente"
                         >
 
@@ -168,6 +169,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="primerApellido"
+                            maxlength="100"
                             placeholder="Primer apellido"
                         >
 
@@ -177,6 +179,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="segundoApellido"
+                            maxlength="100"
                             placeholder="Segundo apellido"
                         >
 
@@ -186,6 +189,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="tel"
                             id="telefono"
+                            maxlength="20"
                             placeholder="Teléfono del cliente"
                         >
 
@@ -195,6 +199,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="email"
                             id="email"
+                            maxlength="100"
                             placeholder="Correo electrónico"
                         >
 
@@ -214,6 +219,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="marca"
+                            maxlength="50"
                             placeholder="Ejemplo: TOYOTA"
                         >
 
@@ -223,6 +229,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="modelo"
+                            maxlength="50"
                             placeholder="Ejemplo: COROLLA"
                         >
 
@@ -232,6 +239,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                         <input
                             type="text"
                             id="placa"
+                            maxlength="15"
                             placeholder="Placa del vehículo"
                         >
 
@@ -268,6 +276,7 @@ if ($_SESSION["rol"] !== "mecanico") {
 
             <textarea
                 id="diagnostico"
+                maxlength="5000"
                 placeholder="Describe el problema encontrado..."
             ></textarea>
 
@@ -276,6 +285,7 @@ if ($_SESSION["rol"] !== "mecanico") {
 
             <textarea
                 id="reparaciones"
+                maxlength="5000"
                 placeholder="Describe las reparaciones realizadas..."
             ></textarea>
 
@@ -307,6 +317,7 @@ if ($_SESSION["rol"] !== "mecanico") {
                     <input
                         type="text"
                         id="nuevoRepuestoNombre"
+                        maxlength="150"
                         placeholder="Nombre del repuesto"
                     >
 
