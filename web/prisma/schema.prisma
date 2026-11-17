@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  idCliente       Int        @id @default(autoincrement()) @map("id_cliente")
+  nombre          String     @db.VarChar(100)
+  primerApellido  String     @map("primerapellido") @db.VarChar(100)
+  segundoApellido String?    @map("segundoapellido") @db.VarChar(100)
+  telefono        String?    @db.VarChar(20)
+  email           String?    @db.VarChar(100)
+  vehiculos       Vehiculo[]
+
+  @@map("clientes")
+}
+
+model Vehiculo {
+  idVehiculo  Int             @id @default(autoincrement()) @map("id_vehiculo")
+  idCliente   Int             @map("id_cliente")
+  placa       String          @unique @db.VarChar(15)
+  modelo      String          @db.VarChar(50)
+  marca       String          @db.VarChar(50)
+  anio        Int?            @map("anio")
+  kilometraje Float?          @db.DoublePrecision
+  cliente     Cliente         @relation(fields: [idCliente], references: [idCliente], onDelete: Restrict)
+  ordenes     OrdenServicio[]
+
+  @@index([idCliente])
+  @@map("vehiculos")
+}
+
+model OrdenServicio {
+  idOrden       Int                     @id @default(autoincrement()) @map("id_orden")
+  codigoOrden   String                  @unique @map("codigo_orden") @db.VarChar(30)
+  idVehiculo    Int                     @map("id_vehiculo")
+  fechaIngreso  DateTime                @default(now()) @map("fecha_ingreso") @db.Timestamp(0)
+  estadoOrden   String                  @default("Abierta") @map("estado_orden") @db.VarChar(30)
+  vehiculo      Vehiculo                @relation(fields: [idVehiculo], references: [idVehiculo], onDelete: Restrict)
+  diagnostico   DiagnosticoReparacion?
+  cotizaciones  Cotizacion[]
+  pagos         PagoCuenta[]
+
+  @@index([idVehiculo])
+  @@map("ordenes_servicio")
+}
+
+model DiagnosticoReparacion {
+  idDiagnostico Int                  @id @default(autoincrement()) @map("id_diagnostico")
+  idOrden       Int                  @unique @map("id_orden")
+  descripcionFall String?            @map("descripcion_fall")
+  tareaRealiz   String?              @map("tarea_realiz")
+  prioridad     String?              @db.VarChar(30)
+  orden         OrdenServicio        @relation(fields: [idOrden], references: [idOrden], onDelete: Restrict)
+  repuestos     RepuestoUtilizado[]
+
+  @@map("diagnostico_reparacion")
+}
+
+model RepuestoUtilizado {
+  idRepuestoUtil Int                    @id @default(autoincrement()) @map("id_repuesto_util")
+  idDiagnostico  Int                    @map("id_diagnostico")
+  idRepuesto     Int?                   @map("id_repuesto")
+  cantidad       Int
+  precioUnitario Decimal                @map("precio_unitario") @db.Decimal(10, 2)
+  totalItem      Decimal                @map("total_item") @db.Decimal(10, 2)
+  descripcion    String?                @db.VarChar(150)
+  diagnostico    DiagnosticoReparacion  @relation(fields: [idDiagnostico], references: [idDiagnostico], onDelete: Restrict)
+  inventario     InventarioRepuesto?    @relation(fields: [idRepuesto], references: [idRepuesto], onDelete: Restrict)
+
+  @@index([idDiagnostico])
+  @@index([idRepuesto])
+  @@map("repuestos_utilizados")
+}
+
+model InventarioRepuesto {
+  idRepuesto   Int                 @id @default(autoincrement()) @map("id_repuesto")
+  nombre       String              @db.VarChar(100)
+  descripcion  String?
+  stockActual  Int                 @default(0) @map("stock_actual")
+  stockMinimo  Int                 @default(0) @map("stock_minimo")
+  precioBase   Decimal             @map("precio_base") @db.Decimal(10, 2)
+  utilizados   RepuestoUtilizado[]
+
+  @@map("inventario_repuesto")
+}
+
+model Cotizacion {
+  idCotizacion Int                 @id @default(autoincrement()) @map("id_cotizacion")
+  idOrden      Int                 @unique @map("id_orden")
+  subtotal     Decimal             @db.Decimal(10, 2)
+  impuesto     Decimal             @db.Decimal(10, 2)
+  total        Decimal             @db.Decimal(10, 2)
+  fechaEmision DateTime            @default(now()) @map("fecha_emision") @db.Timestamp(0)
+  orden        OrdenServicio       @relation(fields: [idOrden], references: [idOrden], onDelete: Restrict)
+  detalles     DetalleCotizacion[]
+  pagos        PagoCuenta[]
+
+  @@map("cotizaciones")
+}
+
+model DetalleCotizacion {
+  idDetalle      Int         @id @default(autoincrement()) @map("id_detalle")
+  idCotizacion   Int         @map("id_cotizacion")
+  descripcion    String      @db.VarChar(150)
+  tipo           String      @db.VarChar(20)
+  cantidad       Int
+  precioUnitario Decimal     @map("precio_unitario") @db.Decimal(10, 2)
+  totalItem      Decimal     @map("total_item") @db.Decimal(10, 2)
+  cotizacion     Cotizacion  @relation(fields: [idCotizacion], references: [idCotizacion], onDelete: Restrict)
+
+  @@index([idCotizacion])
+  @@map("detalle_cotizacion")
+}
+
+model PagoCuenta {
+  idPago        Int           @id @default(autoincrement()) @map("id_pago")
+  idOrden       Int           @map("id_orden")
+  idCotizacion  Int           @map("id_cotizacion")
+  montoPagar    Decimal       @map("monto_pagar") @db.Decimal(10, 2)
+  montoRecibido Decimal       @map("monto_recibido") @db.Decimal(10, 2)
+  metodoPago    String        @map("metodo_pago") @db.VarChar(30)
+  fechaPago     DateTime      @default(now()) @map("fecha_pago") @db.Timestamp(0)
+  orden         OrdenServicio @relation(fields: [idOrden], references: [idOrden], onDelete: Restrict)
+  cotizacion    Cotizacion    @relation(fields: [idCotizacion], references: [idCotizacion], onDelete: Restrict)
+
+  @@index([idOrden])
+  @@index([idCotizacion])
+  @@map("pago_cuenta")
+}
+
+model Rol {
+  idRol     Int       @id @default(autoincrement()) @map("id_rol")
+  nombreRol String    @map("nombre_rol") @db.VarChar(30)
+  usuarios  Usuario[]
+
+  @@map("roles")
+}
+
+model Usuario {
+  idUsuario  Int     @id @default(autoincrement()) @map("id_usuario")
+  usuario    String  @unique @db.VarChar(50)
+  contrasena String  @db.VarChar(255)
+  idRol      Int     @map("id_rol")
+  rol        Rol     @relation(fields: [idRol], references: [idRol], onDelete: Restrict)
+
+  @@index([idRol])
+  @@map("usuarios")
+}
