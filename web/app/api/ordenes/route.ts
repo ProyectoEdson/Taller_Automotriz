@@ -59,10 +59,14 @@ export async function POST(request: Request) {
         const placa = data.placa.toUpperCase();
         const found = await tx.vehiculo.findUnique({ where: { placa } });
         if (found && found.idCliente !== cliente.idCliente) throw new Conflict("La placa pertenece a otro cliente");
-        const vehiculo = found ?? await tx.vehiculo.create({ data: {
-          idCliente: cliente.idCliente, placa, marca: data.marca, modelo: data.modelo,
-          anio: data.anio ?? null, kilometraje: data.kilometraje ?? null,
-        } });
+        const vehiculo = found
+          ? await tx.vehiculo.update({ where: { idVehiculo: found.idVehiculo }, data: {
+              marca: data.marca, modelo: data.modelo, anio: data.anio ?? null, kilometraje: data.kilometraje ?? null,
+            } })
+          : await tx.vehiculo.create({ data: {
+              idCliente: cliente.idCliente, placa, marca: data.marca, modelo: data.modelo,
+              anio: data.anio ?? null, kilometraje: data.kilometraje ?? null,
+            } });
         codigoOrden = data.codigoOrden || `AT-${new Date().toISOString().slice(2, 10).replaceAll("-", "")}-${randomInt(0, 10000).toString().padStart(4, "0")}`;
         const orden = await tx.ordenServicio.create({ data: { codigoOrden, idVehiculo: vehiculo.idVehiculo } });
         idOrden = orden.idOrden;

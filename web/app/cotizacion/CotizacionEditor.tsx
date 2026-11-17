@@ -15,6 +15,29 @@ export default function CotizacionEditor({ codigo, iniciales, guardada, totales 
   const [enviando, setEnviando] = useState(false);
   const [registrada, setRegistrada] = useState(guardada);
   const [importes, setImportes] = useState(totales);
+  // Vista previa en centavos; el servidor vuelve a calcular con Prisma.Decimal.
+  let subtotalCentavos = 0;
+  let vistaValida = filas.length > 0;
+  for (const fila of filas) {
+    if (!/^\d{1,8}(\.\d{1,2})?$/.test(fila.precio) || !Number.isSafeInteger(fila.cantidad) || fila.cantidad <= 0) {
+      vistaValida = false;
+      break;
+    }
+    const [entero, decimal = ""] = fila.precio.split(".");
+    const precioCentavos = Number(entero) * 100 + Number(decimal.padEnd(2, "0"));
+    subtotalCentavos += precioCentavos * fila.cantidad;
+    if (!Number.isSafeInteger(subtotalCentavos)) {
+      vistaValida = false;
+      break;
+    }
+  }
+  const impuestoCentavos = Math.round(subtotalCentavos * 7 / 100);
+  const vista = vistaValida && subtotalCentavos + impuestoCentavos <= 9999999999 ? {
+    subtotal: (subtotalCentavos / 100).toFixed(2),
+    impuesto: (impuestoCentavos / 100).toFixed(2),
+    total: ((subtotalCentavos + impuestoCentavos) / 100).toFixed(2),
+  } : undefined;
+  const resumen = registrada ? importes : vista;
 
   function cambiar(index: number, cambio: Partial<Fila>) {
     setFilas(filas.map((fila, position) => position === index ? { ...fila, ...cambio } : fila));
@@ -66,9 +89,9 @@ export default function CotizacionEditor({ codigo, iniciales, guardada, totales 
         </div>
         <div className="acciones-cotizacion"><button type="button" id="agregarDetalle" disabled={registrada || !codigo} onClick={() => setFilas([...filas, { id: crypto.randomUUID(), descripcion: "", tipo: "Servicio", cantidad: 1, precio: "", total: "" }])}>+ Agregar detalle</button></div>
         <div className="resumen-cotizacion">
-          <div className="fila-resumen"><span>Subtotal:</span><strong id="subtotalTexto">{importes ? `$${importes.subtotal}` : "—"}</strong></div>
-          <div className="fila-resumen"><span>Impuesto (7 %):</span><strong id="impuestoTexto">{importes ? `$${importes.impuesto}` : "—"}</strong></div>
-          <div className="fila-resumen total-final"><span>Total:</span><strong id="totalTexto">{importes ? `$${importes.total}` : "—"}</strong></div>
+          <div className="fila-resumen"><span>Subtotal:</span><strong id="subtotalTexto">{resumen ? `$${resumen.subtotal}` : "—"}</strong></div>
+          <div className="fila-resumen"><span>Impuesto (7 %):</span><strong id="impuestoTexto">{resumen ? `$${resumen.impuesto}` : "—"}</strong></div>
+          <div className="fila-resumen total-final"><span>Total:</span><strong id="totalTexto">{resumen ? `$${resumen.total}` : "—"}</strong></div>
         </div>
       </section>
       <div className="acciones-cotizacion"><button type="submit" id="btnGenerar" disabled={registrada || enviando || !codigo || filas.length === 0}>GENERAR COTIZACIÓN</button></div>
