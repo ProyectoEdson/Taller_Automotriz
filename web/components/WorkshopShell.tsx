@@ -3,7 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/auth";
 
 type Role = "mecanico" | "recepcionista";
-type Section = "diagnostico" | "cotizacion" | "pagos";
+type Section = "diagnostico" | "cotizacion" | "pagos" | "catalogo";
 
 export default function WorkshopShell({ role, active, children }: { role: Role; active: Section; children: ReactNode }) {
   return (
@@ -33,6 +33,10 @@ export default function WorkshopShell({ role, active, children }: { role: Role; 
           <Link href="/inicio" className="opcion">
             <span className="icono"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7" /><path d="M5 9v11h14V9" /><path d="M9 20v-7h6v7" /></svg></span>
             INICIO
+          </Link>
+          <Link href="/catalogo" className={`opcion${active === "catalogo" ? " seleccionado" : ""}`}>
+            <span className="icono"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /><path d="M2 4h20v16H2z" /></svg></span>
+            <span>CATÁLOGO</span>
           </Link>
           {role === "mecanico" ? (
             <Link href="/diagnostico" className={`opcion${active === "diagnostico" ? " seleccionado" : ""}`}>

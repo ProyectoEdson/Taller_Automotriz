@@ -1,0 +1,124 @@
+.catalogo {
+  max-width: 1050px;
+}
+
+.encabezado {
+  align-items: flex-end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.encabezado h1 {
+  margin-bottom: 6px;
+}
+
+.encabezado p {
+  color: #666;
+  font-size: 15px;
+  margin: 0;
+}
+
+.resumen {
+  color: #800000;
+  display: flex;
+  font-size: 13px;
+  font-weight: bold;
+  gap: 14px;
+  white-space: nowrap;
+}
+
+.seccion {
+  margin-bottom: 32px;
+}
+
+.tituloSeccion {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tituloSeccion h3 {
+  margin: 0;
+}
+
+.conteo {
+  color: #777;
+  font-size: 13px;
+}
+
+.tablaWrap {
+  border: 2px solid #dedede;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.tabla {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tabla th,
+.tabla td {
+  border: 2px solid #e9e9e9;
+  font-size: 14px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.tabla th {
+  background: #e9eaf0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tabla th:first-child,
+.tabla td:first-child {
+  text-align: left;
+}
+
+.descripcion {
+  color: #555;
+  text-align: left;
+}
+
+.precio {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.bajo,
+.disponible {
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.bajo {
+  background: #fde2e2;
+  color: #9b0000;
+}
+
+.disponible {
+  background: #e6f4ea;
+  color: #1e6b33;
+}
+
+@media (max-width: 700px) {
+  .encabezado {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tabla th,
+  .tabla td {
+    font-size: 13px;
+    padding: 8px;
+  }
+}

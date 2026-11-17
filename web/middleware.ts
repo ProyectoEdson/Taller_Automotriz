@@ -22,5 +22,5 @@ export default auth((request) => {
 });
 
 export const config = {
-  matcher: ["/inicio", "/diagnostico/:path*", "/cotizacion/:path*", "/pagos/:path*", "/api/ordenes/:path*", "/api/cotizaciones/:path*", "/api/pagos/:path*"],
+  matcher: ["/inicio", "/catalogo/:path*", "/diagnostico/:path*", "/cotizacion/:path*", "/pagos/:path*", "/api/ordenes/:path*", "/api/cotizaciones/:path*", "/api/pagos/:path*"],
 };
