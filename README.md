@@ -16,7 +16,6 @@ Aplicación web para la operación diaria de un taller automotriz: registro de c
 - **Inicio de sesión** con credenciales y validación del perfil seleccionado; sesión JWT y cierre de sesión.
 - **Control de acceso por rol** en páginas, middleware y endpoints: `401` sin sesión, `403` con rol incorrecto.
 - **Panel de inicio** con cuatro indicadores calculados en una sola instantánea de la base: órdenes, cotizaciones pendientes, reparaciones activas y pagos pendientes.
-- **Catálogo** de repuestos y servicios visible para ambos roles, con stock, stock mínimo, precio y estado de disponibilidad.
 - **Diagnóstico y reparación** (mecánico):
   - Crear una orden nueva con cliente, vehículo, diagnóstico, reparaciones y repuestos.
   - Actualizar una orden existente sin duplicar cliente ni vehículo.
@@ -89,7 +88,6 @@ Aplicación web para la operación diaria de un taller automotriz: registro de c
 │   │   │   └── pagos/route.ts
 │   │   ├── login/page.tsx
 │   │   ├── inicio/page.tsx
-│   │   ├── catalogo/page.tsx
 │   │   ├── diagnostico/page.tsx
 │   │   ├── cotizacion/page.tsx
 │   │   ├── pagos/page.tsx

@@ -66,10 +66,6 @@ export default async function Inicio() {
               <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 10.5L12 3L21 10.5" /><path d="M5 9.5V21H19V9.5" /><path d="M9 21V14H15V21" /></svg></span>
               <span>INICIO</span>
             </Link>
-            <Link href="/catalogo" className="nav-item">
-              <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /><path d="M2 4h20v16H2z" /></svg></span>
-              <span>CATÁLOGO</span>
-            </Link>
             {mecanico ? (
               <Link href="/diagnostico" className="nav-item">
                 <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 13l-3-3 3.7-3.7Z" /></svg></span>
