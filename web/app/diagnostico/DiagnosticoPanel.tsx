@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Orden = {
@@ -27,14 +28,54 @@ function Campo({ id, etiqueta, placeholder, type = "text", maxLength, min, max, 
 }
 
 export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
+  const router = useRouter();
   const [seleccion, setSeleccion] = useState(ordenes[0]?.id.toString() ?? "");
+  const [repuestos, setRepuestos] = useState(ordenes[0]?.repuestos.map(({ nombre, cantidad, precio }) => ({ nombre, cantidad, precio })) ?? []);
+  const [nuevo, setNuevo] = useState(false);
+  const [nombreRepuesto, setNombreRepuesto] = useState("");
+  const [cantidad, setCantidad] = useState("1");
+  const [precio, setPrecio] = useState("0");
+  const [mensaje, setMensaje] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const orden = ordenes.find((item) => item.id.toString() === seleccion);
+
+  async function guardar() {
+    const campo = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement).value.trim();
+    setGuardando(true);
+    try {
+      const body = {
+        ...(orden ? { idOrden: orden.id } : {
+          nombre: campo("nombre"), primerApellido: campo("primerApellido"), segundoApellido: campo("segundoApellido"),
+          telefono: campo("telefono"), email: campo("email"), marca: campo("marca"), modelo: campo("modelo"),
+          placa: campo("placa"), anio: campo("anio") ? Number(campo("anio")) : null,
+          kilometraje: campo("kilometraje") ? Number(campo("kilometraje")) : null,
+        }),
+        diagnostico: campo("diagnostico"), reparaciones: campo("reparaciones"), repuestos,
+      };
+      const response = await fetch("/api/ordenes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const result = await response.json();
+      setMensaje(response.ok ? `Diagnóstico guardado: ${result.codigoOrden}` : result.mensaje);
+      if (response.ok) {
+        setSeleccion(String(result.idOrden));
+        router.refresh();
+      }
+    } catch {
+      setMensaje("No se pudo guardar el diagnóstico.");
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
     <>
       <h1>REGISTRAR DIAGNÓSTICO Y REPARACIÓN</h1>
       <label htmlFor="ordenTrabajo">ORDEN DE TRABAJO</label>
-      <select id="ordenTrabajo" value={seleccion} onChange={(event) => setSeleccion(event.target.value)}>
+      <select id="ordenTrabajo" value={seleccion} onChange={(event) => {
+        const id = event.target.value;
+        setSeleccion(id);
+        setRepuestos(ordenes.find((item) => item.id.toString() === id)?.repuestos.map(({ nombre, cantidad, precio }) => ({ nombre, cantidad, precio })) ?? []);
+        setMensaje("");
+      }}>
         <option value="">Nueva orden (código automático)</option>
         {ordenes.map((item) => <option key={item.id} value={item.id}>{item.codigo} — {item.placa}</option>)}
       </select>
@@ -75,33 +116,38 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
       )}
 
       <label htmlFor="diagnostico">DIAGNÓSTICO</label>
-      <textarea key={`diagnostico-${seleccion}`} id="diagnostico" maxLength={5000} placeholder="Describe el problema encontrado..." defaultValue={orden?.diagnostico ?? ""} readOnly={Boolean(orden)} />
+      <textarea key={`diagnostico-${seleccion}`} id="diagnostico" maxLength={5000} placeholder="Describe el problema encontrado..." defaultValue={orden?.diagnostico ?? ""} />
       <label htmlFor="reparaciones">REPARACIONES REALIZADAS</label>
-      <textarea key={`reparaciones-${seleccion}`} id="reparaciones" maxLength={5000} placeholder="Describe las reparaciones realizadas..." defaultValue={orden?.reparaciones ?? ""} readOnly={Boolean(orden)} />
+      <textarea key={`reparaciones-${seleccion}`} id="reparaciones" maxLength={5000} placeholder="Describe las reparaciones realizadas..." defaultValue={orden?.reparaciones ?? ""} />
 
       <section className="repuestos">
         <label>REPUESTO UTILIZADO</label>
         <table>
           <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead>
           <tbody id="tablaRepuestos">
-            {orden?.repuestos.map((repuesto) => (
-              <tr key={repuesto.id}>
-                <td>{repuesto.nombre} <button type="button" className="btn-eliminar-repuesto" title="Quitar repuesto" disabled>×</button></td><td>{repuesto.cantidad}</td>
-                <td>$ {repuesto.precio}</td><td>$ {repuesto.total}</td>
+            {repuestos.map((repuesto, index) => (
+              <tr key={index}>
+                <td>{repuesto.nombre} <button type="button" className="btn-eliminar-repuesto" title="Quitar repuesto" onClick={() => setRepuestos(repuestos.filter((_, position) => position !== index))}>×</button></td>
+                <td>{repuesto.cantidad}</td><td>$ {repuesto.precio}</td>
+                <td>$ {(Number(repuesto.precio) * repuesto.cantidad).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="nuevo-repuesto" id="nuevoRepuestoForm" hidden>
-          <input type="text" id="nuevoRepuestoNombre" maxLength={150} placeholder="Nombre del repuesto" aria-label="Nombre del repuesto" />
-          <input type="number" id="nuevoRepuestoCantidad" defaultValue="1" min="1" step="1" placeholder="Cantidad" aria-label="Cantidad" />
-          <input type="number" id="nuevoRepuestoPrecio" defaultValue="0" min="0" step="0.01" placeholder="Precio" aria-label="Precio" />
-          <button type="button" id="btnConfirmarRepuesto" disabled title="Disponible en fase 4">Añadir</button>
+        <div className="nuevo-repuesto" id="nuevoRepuestoForm" hidden={!nuevo}>
+          <input type="text" id="nuevoRepuestoNombre" maxLength={150} placeholder="Nombre del repuesto" aria-label="Nombre del repuesto" value={nombreRepuesto} onChange={(event) => setNombreRepuesto(event.target.value)} />
+          <input type="number" id="nuevoRepuestoCantidad" value={cantidad} onChange={(event) => setCantidad(event.target.value)} min="1" step="1" placeholder="Cantidad" aria-label="Cantidad" />
+          <input type="number" id="nuevoRepuestoPrecio" value={precio} onChange={(event) => setPrecio(event.target.value)} min="0" step="0.01" placeholder="Precio" aria-label="Precio" />
+          <button type="button" id="btnConfirmarRepuesto" onClick={() => {
+            if (!nombreRepuesto.trim() || !Number.isInteger(Number(cantidad)) || Number(cantidad) <= 0 || !/^\d{1,8}(\.\d{1,2})?$/.test(precio)) { setMensaje("Repuesto inválido."); return; }
+            setRepuestos([...repuestos, { nombre: nombreRepuesto.trim(), cantidad: Number(cantidad), precio }]);
+            setNombreRepuesto(""); setCantidad("1"); setPrecio("0"); setNuevo(false);
+          }}>Añadir</button>
         </div>
-        <div className="acciones"><button type="button" id="btnAgregarRepuesto" disabled title="Disponible en fase 4">Agregar Repuesto</button></div>
+        <div className="acciones"><button type="button" id="btnAgregarRepuesto" onClick={() => setNuevo(!nuevo)}>Agregar Repuesto</button></div>
       </section>
-      <div className="acciones"><button type="button" id="btnGuardarDiagnostico" disabled title="Disponible en fase 4">Guardar Diagnóstico</button></div>
-      <p className="aviso-ordenes">Guardar diagnósticos, crear órdenes y agregar repuestos estarán disponibles en la fase 4. Los cambios escritos aquí no se guardan.</p>
+      <div className="acciones"><button type="button" id="btnGuardarDiagnostico" disabled={guardando} onClick={guardar}>Guardar Diagnóstico</button></div>
+      {mensaje && <p className="aviso-ordenes" role="status">{mensaje}</p>}
     </>
   );
 }

@@ -6,7 +6,10 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {
   const rol = request.auth?.user?.rol;
-  if (!rol) return NextResponse.redirect(new URL("/login", process.env.AUTH_URL ?? request.url));
+  if (!rol) {
+    if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
+    return NextResponse.redirect(new URL("/login", process.env.AUTH_URL ?? request.url));
+  }
 
   const path = request.nextUrl.pathname;
   if ((path.startsWith("/diagnostico") || path.startsWith("/api/ordenes")) && rol !== "mecanico") {
