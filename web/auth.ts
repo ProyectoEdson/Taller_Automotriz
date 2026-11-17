@@ -36,7 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (!usuario) return null;
 
-        // PHP password_hash stores $2y$; bcryptjs understands its equivalent $2a$.
+        // Algunos hashes bcrypt usan el prefijo $2y$; bcryptjs trabaja con su equivalente $2a$.
         const hash = usuario.contrasena.replace(/^\$2y\$/, "$2a$");
         if (!(await compare(parsed.data.password, hash))) return null;
 

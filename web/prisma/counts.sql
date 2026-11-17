@@ -1,5 +1,5 @@
 -- Orden: órdenes / cotizaciones pendientes / reparaciones activas / pagos pendientes.
--- Misma instantánea para las cuatro cifras, equivalente a PHP/resumen.php.
+-- Misma instantánea para las cuatro cifras del panel.
 SELECT
   (SELECT COUNT(*) FROM ordenes_servicio) AS ordenes,
   (SELECT COUNT(*) FROM ordenes_servicio o

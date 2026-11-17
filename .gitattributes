@@ -1,0 +1,13 @@
+# El repositorio es una aplicación TypeScript: docs e imágenes no cuentan como lenguaje.
+*.md linguist-documentation
+web/docs/** linguist-documentation
+
+# El lockfile es generado y no debe dominar la barra de lenguajes.
+web/package-lock.json linguist-generated=true
+web/package-lock.json linguist-detectable=false
+
+# Código de la aplicación.
+web/**/*.ts linguist-detectable=true
+web/**/*.tsx linguist-detectable=true
+web/**/*.css linguist-detectable=true
+web/**/*.mjs linguist-detectable=true
