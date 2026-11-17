@@ -16,19 +16,48 @@ type Cuenta = {
 
 const dinero = (valor: string) => `$${valor}`;
 
-export default function PagosCliente({ cuentas }: { cuentas: Cuenta[] }) {
+export default function PagosCliente({ cuentas: iniciales }: { cuentas: Cuenta[] }) {
+  const [cuentas, setCuentas] = useState(iniciales);
   const [seleccion, setSeleccion] = useState<number | null>(
     cuentas.find((cuenta) => cuenta.estado !== "Pagado")?.id ?? cuentas[0]?.id ?? null,
   );
+  const [monto, setMonto] = useState(cuentas.find((item) => item.id === seleccion)?.pendiente ?? "");
+  const [metodo, setMetodo] = useState("Efectivo");
+  const [mensaje, setMensaje] = useState("");
+  const [enviando, setEnviando] = useState(false);
   const cuenta = cuentas.find((item) => item.id === seleccion);
   const pagada = cuenta?.estado === "Pagado";
+
+  async function registrar() {
+    if (!cuenta) return;
+    setEnviando(true);
+    try {
+      const response = await fetch("/api/pagos", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idCotizacion: cuenta.id, monto, metodo }),
+      });
+      const result = await response.json();
+      setMensaje(response.ok ? `Pago N.º ${result.idPago} registrado. Saldo: $${result.saldo} (${result.estado}).` : result.mensaje);
+      if (response.ok) {
+        setCuentas(cuentas.map((item) => item.id === cuenta.id ? {
+          ...item, pagado: (Number(item.total) - Number(result.saldo)).toFixed(2),
+          pendiente: result.saldo, estado: result.estado,
+        } : item));
+        setMonto(result.saldo);
+      }
+    } catch {
+      setMensaje("No se pudo registrar el pago.");
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   return (
     <>
       <h1>REGISTRAR PAGO DE CUENTA</h1>
       <section className="informacion">
         <h3>SELECCIONAR ORDEN DE TRABAJO</h3>
-        <select id="seleccionarOrden" value={seleccion ?? ""} onChange={(evento) => setSeleccion(evento.target.value ? Number(evento.target.value) : null)}>
+        <select id="seleccionarOrden" value={seleccion ?? ""} onChange={(evento) => { const id = Number(evento.target.value); setSeleccion(id || null); setMonto(cuentas.find((item) => item.id === id)?.pendiente ?? ""); setMensaje(""); }}>
           <option value="">Seleccione una orden</option>
           {cuentas.map((item) => (
             <option key={item.id} value={item.id}>
@@ -63,18 +92,18 @@ export default function PagosCliente({ cuentas }: { cuentas: Cuenta[] }) {
         <section className="formulario-pago" key={seleccion ?? "sin-orden"}>
           <h3>Método De Pago</h3>
           <div className="metodos">
-            <label><input type="radio" name="metodo" value="Efectivo" defaultChecked disabled={!cuenta || pagada} />Efectivo</label>
-            <label><input type="radio" name="metodo" value="Tarjeta" disabled={!cuenta || pagada} />Tarjeta</label>
-            <label><input type="radio" name="metodo" value="Transferencia" disabled={!cuenta || pagada} />Yappy/Transferencia</label>
+            <label><input type="radio" name="metodo" value="Efectivo" checked={metodo === "Efectivo"} onChange={() => setMetodo("Efectivo")} disabled={!cuenta || pagada} />Efectivo</label>
+            <label><input type="radio" name="metodo" value="Tarjeta" checked={metodo === "Tarjeta"} onChange={() => setMetodo("Tarjeta")} disabled={!cuenta || pagada} />Tarjeta</label>
+            <label><input type="radio" name="metodo" value="Transferencia" checked={metodo === "Transferencia"} onChange={() => setMetodo("Transferencia")} disabled={!cuenta || pagada} />Yappy/Transferencia</label>
           </div>
           <label htmlFor="monto">Monto Recibido</label>
-          <input type="number" id="monto" min="0" step="0.01" max={cuenta?.pendiente} defaultValue={cuenta?.pendiente ?? ""} disabled={!cuenta || pagada} />
+          <input type="number" id="monto" min="0.01" step="0.01" max={cuenta?.pendiente} value={monto} onChange={(evento) => setMonto(evento.target.value)} disabled={!cuenta || pagada} />
           <label htmlFor="fecha">Fecha De Pago</label>
-          <input type="date" id="fecha" defaultValue={new Date().toLocaleDateString("en-CA")} disabled={!cuenta || pagada} />
+          <input type="date" id="fecha" defaultValue={new Date().toLocaleDateString("en-CA")} disabled title="Fecha asignada por el servidor" />
         </section>
       </div>
-      <div className="acciones"><button type="button" id="btnRegistrarPago" disabled>Registrar Pago</button></div>
-      <p id="mensajePago">{cuentas.length === 0 ? "No hay cotizaciones registradas." : "Registro de pagos disponible en fase 4."}</p>
+      <div className="acciones"><button type="button" id="btnRegistrarPago" disabled={!cuenta || pagada || enviando || !monto} onClick={registrar}>Registrar Pago</button></div>
+      <p id="mensajePago" role="status">{mensaje || (cuentas.length === 0 ? "No hay cotizaciones registradas." : pagada ? "Esta cotización ya está pagada." : "")}</p>
     </>
   );
 }
