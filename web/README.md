@@ -23,6 +23,12 @@ Para obtener las cuatro cifras del dashboard desde la misma instantánea SQL: `d
 
 `web/app/globals.css` es una copia byte a byte de `CSS/AUTOMOTRIZ.CSS`, no una fuente independiente. Cualquier ajuste futuro debe hacerse primero en el archivo original, después copiarse íntegro a `web/app/globals.css` y comprobarse desde la raíz con `cmp CSS/AUTOMOTRIZ.CSS web/app/globals.css`. Los estilos que en PHP están incrustados en la pantalla de cotización viven en `web/app/cotizacion/cotizacion.module.css`; no forman parte del CSS global.
 
+## Cotización con cotización existente
+
+Por la unicidad de `cotizaciones.id_orden`, una orden admite una sola cotización. Si ya existe, Cotización la muestra en solo lectura con sus importes guardados y no ofrece generar otra; si no existe, muestra la vista previa del diagnóstico y la generación quedará habilitada en la fase 4 con el cálculo de IVA en servidor. El PHP siempre muestra la vista previa; esta decisión mantiene coherente el modelo de datos y evita duplicados.
+
+La tabla de Cotización mantiene el `min-height` original en su contenedor, no en la tabla, para que una cotización de una sola fila no estire la fila a 435 px. El CSS global sigue intacto.
+
 ## Autorización
 
 Las páginas comprueban la sesión y el rol con `auth()` en el servidor, además del middleware. Los route handlers de escritura de la fase 4 deben repetir esa comprobación con `auth()` y responder 403; el middleware es defensa adicional, no la única autorización.

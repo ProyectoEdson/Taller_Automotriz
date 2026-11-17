@@ -27,7 +27,7 @@ function Campo({ id, etiqueta, placeholder, type = "text", maxLength, min, max, 
 }
 
 export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
-  const [seleccion, setSeleccion] = useState(ordenes[0]?.id.toString() ?? "");
+  const [seleccion, setSeleccion] = useState("");
   const orden = ordenes.find((item) => item.id.toString() === seleccion);
 
   return (
@@ -86,7 +86,7 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
           <tbody id="tablaRepuestos">
             {orden?.repuestos.map((repuesto) => (
               <tr key={repuesto.id}>
-                <td>{repuesto.nombre}</td><td>{repuesto.cantidad}</td>
+                <td>{repuesto.nombre} <button type="button" className="btn-eliminar-repuesto" title="Quitar repuesto" disabled>×</button></td><td>{repuesto.cantidad}</td>
                 <td>$ {repuesto.precio}</td><td>$ {repuesto.total}</td>
               </tr>
             ))}
@@ -100,8 +100,8 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
         </div>
         <div className="acciones"><button type="button" id="btnAgregarRepuesto" disabled title="Disponible en fase 4">Agregar Repuesto</button></div>
       </section>
-      <p className="aviso-ordenes">Guardar diagnósticos, crear órdenes y agregar repuestos estarán disponibles en la fase 4. Los cambios escritos aquí no se guardan.</p>
       <div className="acciones"><button type="button" id="btnGuardarDiagnostico" disabled title="Disponible en fase 4">Guardar Diagnóstico</button></div>
+      <p className="aviso-ordenes">Guardar diagnósticos, crear órdenes y agregar repuestos estarán disponibles en la fase 4. Los cambios escritos aquí no se guardan.</p>
     </>
   );
 }
