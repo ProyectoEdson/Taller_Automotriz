@@ -27,7 +27,7 @@ function Campo({ id, etiqueta, placeholder, type = "text", maxLength, min, max, 
 }
 
 export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
-  const [seleccion, setSeleccion] = useState("");
+  const [seleccion, setSeleccion] = useState(ordenes[0]?.id.toString() ?? "");
   const orden = ordenes.find((item) => item.id.toString() === seleccion);
 
   return (
