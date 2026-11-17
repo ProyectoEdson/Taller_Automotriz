@@ -61,7 +61,9 @@ export async function POST(request: Request) {
         if (found && found.idCliente !== cliente.idCliente) throw new Conflict("La placa pertenece a otro cliente");
         const vehiculo = found
           ? await tx.vehiculo.update({ where: { idVehiculo: found.idVehiculo }, data: {
-              marca: data.marca, modelo: data.modelo, anio: data.anio ?? null, kilometraje: data.kilometraje ?? null,
+              marca: data.marca, modelo: data.modelo,
+              ...(data.anio != null ? { anio: data.anio } : {}),
+              ...(data.kilometraje != null ? { kilometraje: data.kilometraje } : {}),
             } })
           : await tx.vehiculo.create({ data: {
               idCliente: cliente.idCliente, placa, marca: data.marca, modelo: data.modelo,

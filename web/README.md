@@ -1,4 +1,4 @@
-# Taller Automotriz — Next.js (fase 4)
+# Taller Automotriz — Next.js (fase 5)
 
 Requiere Node.js 22 y Docker con Compose. La aplicación PHP permanece en la raíz como referencia; este directorio contiene la migración. PostgreSQL local usa solo el contenedor `postgres:16-alpine`; no se usa Neon.
 
@@ -10,7 +10,7 @@ node -e 'console.log("AUTH_SECRET=" + require("node:crypto").randomBytes(32).toS
 printf '%s\n' 'AUTH_URL="http://127.0.0.1:3000"' >> .env
 docker compose up -d --wait postgres
 npm ci
-npm run db:migrate -- --name init
+npx prisma migrate deploy
 npm run db:seed
 npm run dev
 ```
@@ -31,7 +31,7 @@ La tabla de Cotización mantiene el `min-height` original en su contenedor, no e
 
 ## Autorización
 
-Las páginas comprueban la sesión y el rol con `auth()` en el servidor, además del middleware. Los route handlers de escritura de la fase 4 deben repetir esa comprobación con `auth()` y responder 403; el middleware es defensa adicional, no la única autorización.
+Las páginas comprueban la sesión y el rol con `auth()` en el servidor, además del middleware. Los route handlers de escritura repiten la comprobación con `auth()` y responden 401 sin sesión o 403 por rol; el middleware es defensa adicional, no la única autorización.
 
 ## Fase 4 — API y verificación
 
@@ -51,3 +51,11 @@ Capturas a 1360×950: `docs/screenshots/{login,inicio,diagnostico,cotizacion,pag
 - Al crear una nueva orden con una placa del mismo cliente, se actualizan marca, modelo, año y kilometraje del vehículo existente sin transferirlo; una placa de otro cliente devuelve 409. La prueba actualizó el vehículo 2 a Honda/Civic/2020/12345 y creó otra orden sobre `id_vehiculo=2`.
 - Para comprobar el 500 sin afectar PostgreSQL, se arrancó una segunda instancia en puerto 3001 con `DATABASE_URL` apuntando a un puerto local cerrado (65432). Los tres endpoints devolvieron `HTTP 500` con cuerpo exacto `{"mensaje":"Error interno"}`; ningún mensaje SQL llegó al cliente.
 - Al terminar estas pruebas se repitió `npx prisma migrate reset --force` y `npx prisma db seed`: el panel quedó en `2/0/0/0`; filas clientes/vehículos/órdenes/diagnósticos/repuestos/cotizaciones/detalles/pagos/inventario `2/2/2/2/5/2/5/2/0`. Este es el estado actual de la base; las capturas anteriores reflejan el escenario de prueba, no el seed final.
+
+## Fase 5 — matriz reproducible y estado final
+
+Desde `web/`, con `.env` local y PostgreSQL saludable, ejecutar `node --env-file=.env scripts/phase5-matrix.mjs`. **Destruye los datos de la base local `taller_automotriz`**: aplica `prisma migrate reset --force` y el seed al inicio y al final (también si una aserción falla). Levanta Next temporalmente en `127.0.0.1:3100`, usa sesiones reales de ambos perfiles, endpoints HTTP reales y consultas Prisma a PostgreSQL; no usa mocks ni servicios externos. Para comprobar el 500 detiene la aplicación temporal y la reinicia con un `DATABASE_URL` hacia el puerto cerrado 65432; no detiene PostgreSQL. Ante fallo del script, la aserción mantiene su error y no se ignora.
+
+En la ejecución comprobada: seed inicial `2/0/0/0` y filas órdenes/diagnósticos/cotizaciones/pagos `2/2/2/2`; permisos API 401/403, páginas 403, validaciones 400 y reglas de negocio 409; dos actualizaciones de diagnóstico conservaron `idDiagnostico=3` y una fila de repuesto; stock fixture 3→2→1→2 y 409 sin alterar el stock; cotización `27.70 + 1.94 = 29.64`, duplicado 409; abono 5.00 dejó 24.64 Pendiente, liquidación 24.64 dejó 0 Pagado, pagos posteriores/sobrepago 409; pagos simultáneos de 75.00 sobre 107.00 dieron 200/409 y suma 75.00. Una placa existente propia conservó año 2027 y kilometraje 49998 cuando llegaron `null`, actualizando marca/modelo; otra persona recibió 409. Con el puerto 65432 cerrado, los tres CU dieron 500 con `{\"mensaje\":\"Error interno\"}` sin mensajes SQL.
+
+`npm run lint`, `npx tsc --noEmit` y `npm run build` terminaron con código 0. El build emitió advertencias de `jose` sobre `CompressionStream`/`DecompressionStream` en Edge Runtime; las rutas y la autenticación funcionaron en las pruebas, pero la advertencia no se suprimió. Capturas de las cinco pantallas del seed en `docs/screenshots/{login,inicio,diagnostico,cotizacion,pagos}-fase5.*` (1360×950). Después de las capturas, el panel siguió en `2/0/0/0`; filas clientes/vehículos/órdenes/diagnósticos/repuestos/cotizaciones/detalles/pagos/inventario `2/2/2/2/5/2/5/2/0`. Trazabilidad CU → archivos/funciones: `../MIGRATION_PLAN.md` («Trazabilidad implementada, fase 5»).

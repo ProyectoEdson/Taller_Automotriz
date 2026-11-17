@@ -120,3 +120,13 @@ Cada fase termina con evidencia de comandos/resultados y espera aprobación ante
 - [ ] `npm run build`, `tsc --noEmit` y lint pasan; pruebas reproducibles de los tres CU y permisos.
 - [ ] `main` mantiene historial y árbol intactos; la rama de migración no modifica la versión PHP de `main`.
 - [ ] Arranque local en Linux con comando documentado en `web/`, PostgreSQL Docker Compose y seed; preparación Vercel/Neon solo documental.
+
+## Trazabilidad implementada, fase 5
+
+| CU | Página y formulario | Endpoint y función | Transacción y evidencia |
+|---|---|---|---|
+| CU-08 Diagnóstico | `web/app/diagnostico/page.tsx` (`DiagnosticoPage`), `DiagnosticoPanel.tsx` (`guardar`) | `web/app/api/ordenes/route.ts` (`POST`): autorización, validación, cliente/vehículo, orden, diagnóstico y repuestos | `prisma.$transaction`; bloqueo de orden existente, restitución/descuento condicional de inventario y reemplazo 1:1. `web/scripts/phase5-matrix.mjs`: alta, dos actualizaciones, placa propia/ajena, stock y 400/401/403/409/500. |
+| CU-04 Cotización | `web/app/cotizacion/page.tsx` (`Cotizacion`), `CotizacionEditor.tsx` (`generar`, vista previa en centavos) | `web/app/api/cotizaciones/route.ts` (`POST`): líneas, `Prisma.Decimal`, IVA 7 % | `prisma.$transaction`; `id_orden` UNIQUE impide duplicados. `phase5-matrix.mjs`: 27.70/1.94/29.64, duplicado y errores. Cotización existente en solo lectura. |
+| CU-05 Pagos | `web/app/pagos/page.tsx` (`Pagos`), `PagosCliente.tsx` (`registrar`) | `web/app/api/pagos/route.ts` (`POST`): saldo, método, ID real y estado | `prisma.$transaction`; `SELECT ... FOR UPDATE` sobre cotización antes de sumar pagos. `phase5-matrix.mjs`: abono, liquidación, sobrepago, cierre, concurrencia 200/409 y errores. |
+
+Las tres páginas comprueban `auth()`; el middleware y cada handler también verifican acceso. El panel conserva las cuatro definiciones de `web/prisma/counts.sql`. La ejecución de fase 5 termina restaurando el seed (`2/0/0/0`) y guarda capturas en `web/docs/screenshots/*-fase5.*`; la fase 6 no se inició.

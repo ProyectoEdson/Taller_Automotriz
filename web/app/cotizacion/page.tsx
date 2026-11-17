@@ -92,8 +92,8 @@ export default async function Cotizacion({
               descripcion: `Diagnóstico: ${diagnostico.descripcionFall.trim()}`.slice(0, 150),
               tipo: "Servicio",
               cantidad: 1,
-              precio: "",
-              total: "",
+              precio: "0.00",
+              total: "0.00",
             }]
           : []),
         ...(diagnostico?.tareaRealiz?.trim()
@@ -102,8 +102,8 @@ export default async function Cotizacion({
               descripcion: `Reparación: ${diagnostico.tareaRealiz.trim()}`.slice(0, 150),
               tipo: "Servicio",
               cantidad: 1,
-              precio: "",
-              total: "",
+              precio: "0.00",
+              total: "0.00",
             }]
           : []),
         ...(diagnostico?.repuestos.map((repuesto) => ({
