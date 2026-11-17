@@ -1,6 +1,6 @@
 # Taller Automotriz — Next.js
 
-Migración funcional de CU-08 (diagnóstico), CU-04 (cotización) y CU-05 (pagos). La app PHP de la raíz sigue como referencia; no se ejecuta para iniciar Next.js. Requiere **Node.js 22.x**, npm y Docker Compose. Trabajar desde `web/`; el PostgreSQL local es `postgres:16-alpine`, enlazado solo a `127.0.0.1:5432` con volumen persistente (`compose.yaml`).
+Migración funcional de CU-08 (diagnóstico), CU-04 (cotización) y CU-05 (pagos). La versión PHP anterior vive en la rama `php-legacy` y no forma parte de `main`; se conserva como referencia. Requiere **Node.js 22.x**, npm y Docker Compose. Trabajar desde `web/`; el PostgreSQL local es `postgres:16-alpine`, enlazado solo a `127.0.0.1:5432` con volumen persistente (`compose.yaml`).
 
 ## Instalación local
 
@@ -31,7 +31,7 @@ Verificar los cuatro contadores en una instantánea SQL desde `web/`: `docker co
 
 ## Sincronización del CSS original
 
-`web/app/globals.css` es una copia byte a byte de `CSS/AUTOMOTRIZ.CSS`, no una fuente independiente. Cualquier ajuste futuro debe hacerse primero en el archivo original, después copiarse íntegro a `web/app/globals.css` y comprobarse desde la raíz con `cmp CSS/AUTOMOTRIZ.CSS web/app/globals.css`. Los estilos que en PHP están incrustados en la pantalla de cotización viven en `web/app/cotizacion/cotizacion.module.css`; no forman parte del CSS global.
+`web/app/globals.css` es la hoja de estilos de la aplicación actual. La versión PHP y su `CSS/AUTOMOTRIZ.CSS` original quedaron en la rama `php-legacy`; no se sincronizan desde `main`. Los estilos que en PHP están incrustados en la pantalla de cotización viven en `web/app/cotizacion/cotizacion.module.css`; no forman parte del CSS global.
 
 ## Cotización con cotización existente
 
