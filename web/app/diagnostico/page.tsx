@@ -11,38 +11,61 @@ export default async function DiagnosticoPage() {
   if (!session?.user) redirect("/login");
   if (session.user.rol !== "mecanico") redirect("/inicio");
 
-  const ordenes = await prisma.ordenServicio.findMany({
-    orderBy: { idOrden: "desc" },
-    select: {
-      idOrden: true,
-      codigoOrden: true,
-      vehiculo: {
-        select: {
-          placa: true,
-          marca: true,
-          modelo: true,
-          cliente: { select: { nombre: true, primerApellido: true, segundoApellido: true } },
+  const [ordenes, inventario] = await Promise.all([
+    prisma.ordenServicio.findMany({
+      orderBy: { idOrden: "desc" },
+      select: {
+        idOrden: true,
+        codigoOrden: true,
+        vehiculo: {
+          select: {
+            placa: true,
+            marca: true,
+            modelo: true,
+            cliente: { select: { nombre: true, primerApellido: true, segundoApellido: true } },
+          },
         },
-      },
-      diagnostico: {
-        select: {
-          descripcionFall: true,
-          tareaRealiz: true,
-          repuestos: {
-            orderBy: { idRepuestoUtil: "asc" },
-            select: {
-              idRepuestoUtil: true,
-              descripcion: true,
-              cantidad: true,
-              precioUnitario: true,
-              totalItem: true,
-              inventario: { select: { nombre: true } },
+        diagnostico: {
+          select: {
+            descripcionFall: true,
+            tareaRealiz: true,
+            repuestos: {
+              orderBy: { idRepuestoUtil: "asc" },
+              select: {
+                idRepuestoUtil: true,
+                idRepuesto: true,
+                descripcion: true,
+                cantidad: true,
+                precioUnitario: true,
+                totalItem: true,
+                inventario: { select: { nombre: true } },
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.inventarioRepuesto.findMany({
+      orderBy: { nombre: "asc" },
+      select: {
+        idRepuesto: true,
+        nombre: true,
+        descripcion: true,
+        stockActual: true,
+        stockMinimo: true,
+        precioBase: true,
+      },
+    }),
+  ]);
+
+  const catalogo = inventario.map((repuesto) => ({
+    id: repuesto.idRepuesto,
+    nombre: repuesto.nombre,
+    descripcion: repuesto.descripcion ?? "",
+    stock: repuesto.stockActual,
+    stockMinimo: repuesto.stockMinimo,
+    precio: repuesto.precioBase.toFixed(2),
+  }));
 
   const datos = ordenes.map((orden) => ({
     id: orden.idOrden,
@@ -53,8 +76,8 @@ export default async function DiagnosticoPage() {
     diagnostico: orden.diagnostico?.descripcionFall ?? "",
     reparaciones: orden.diagnostico?.tareaRealiz ?? "",
     repuestos: orden.diagnostico?.repuestos.map((repuesto) => ({
-      id: repuesto.idRepuestoUtil,
-      nombre: repuesto.descripcion || repuesto.inventario?.nombre || "",
+      idRepuesto: repuesto.idRepuesto ?? undefined,
+      nombre: (repuesto.idRepuesto ? repuesto.inventario?.nombre : repuesto.descripcion) || repuesto.descripcion || repuesto.inventario?.nombre || "",
       cantidad: repuesto.cantidad,
       precio: repuesto.precioUnitario.toFixed(2),
       total: repuesto.totalItem.toFixed(2),
@@ -63,7 +86,7 @@ export default async function DiagnosticoPage() {
 
   return (
     <WorkshopShell role="mecanico" active="diagnostico">
-      <DiagnosticoPanel ordenes={datos} />
+      <DiagnosticoPanel ordenes={datos} catalogo={catalogo} />
     </WorkshopShell>
   );
 }

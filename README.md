@@ -20,6 +20,7 @@ Aplicación web para la operación diaria de un taller automotriz: registro de c
   - Crear una orden nueva con cliente, vehículo, diagnóstico, reparaciones y repuestos.
   - Actualizar una orden existente sin duplicar cliente ni vehículo.
   - Reutilizar clientes por nombre y apellidos, y vehículos por placa.
+  - Seleccionar repuestos del inventario con autocompletado, stock disponible y precio sugerido.
   - Descontar stock de repuestos y restituirlo al editar el diagnóstico.
   - Código de orden autogenerado (`AT-AAAAMMDD-NNNN`).
 - **Cotización** (recepción):

@@ -1175,6 +1175,93 @@ body.inicio-body .access-arrow {
     background: #800000;
 }
 
+.repuesto-picker {
+    min-width: 0;
+    position: relative;
+}
+
+.repuesto-picker input {
+    width: 100%;
+}
+
+.repuesto-lista {
+    background: white;
+    border: 2px solid #d0d0d0;
+    border-radius: 7px;
+    box-shadow: 0 8px 22px #0002;
+    left: 0;
+    list-style: none;
+    margin: 4px 0 0;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 30;
+}
+
+.repuesto-opcion {
+    align-items: center;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 8px 10px;
+}
+
+.repuesto-opcion.activa {
+    background: #f2d9dc;
+}
+
+.repuesto-opcion.sin-stock {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.repuesto-opcion-datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.repuesto-opcion-datos strong {
+    color: #222;
+    font-size: 14px;
+}
+
+.repuesto-opcion-datos span {
+    color: #666;
+    font-size: 12px;
+}
+
+.repuesto-opcion-meta {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    font-size: 12px;
+    gap: 2px;
+}
+
+.repuesto-opcion-meta strong {
+    color: #800000;
+    white-space: nowrap;
+}
+
+.repuesto-vacio {
+    color: #777;
+    font-size: 13px;
+    padding: 10px;
+}
+
+.stock-repuesto {
+    color: #555;
+    font-size: 12px;
+    margin: 5px 0 0;
+}
+
 .btn-eliminar-repuesto {
     background: transparent;
     border: none;

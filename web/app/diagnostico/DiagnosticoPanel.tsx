@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import RepuestoPicker from "./RepuestoPicker";
+import type { CatalogoRepuesto, Repuesto } from "./types";
 
 type Orden = {
   id: number;
@@ -11,7 +13,7 @@ type Orden = {
   cliente: string;
   diagnostico: string;
   reparaciones: string;
-  repuestos: { id: number; nombre: string; cantidad: number; precio: string; total: string }[];
+  repuestos: Repuesto[];
 };
 
 function Campo({ id, etiqueta, placeholder, type = "text", maxLength, min, max, step }: {
@@ -27,17 +29,19 @@ function Campo({ id, etiqueta, placeholder, type = "text", maxLength, min, max, 
   return <><span>{etiqueta}</span><input id={id} type={type} maxLength={maxLength} min={min} max={max} step={step} placeholder={placeholder} /></>;
 }
 
-export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
+export default function DiagnosticoPanel({ ordenes, catalogo }: { ordenes: Orden[]; catalogo: CatalogoRepuesto[] }) {
   const router = useRouter();
   const [seleccion, setSeleccion] = useState(ordenes[0]?.id.toString() ?? "");
-  const [repuestos, setRepuestos] = useState(ordenes[0]?.repuestos.map(({ nombre, cantidad, precio }) => ({ nombre, cantidad, precio })) ?? []);
+  const [repuestos, setRepuestos] = useState<Repuesto[]>(ordenes[0]?.repuestos ?? []);
   const [nuevo, setNuevo] = useState(false);
   const [nombreRepuesto, setNombreRepuesto] = useState("");
+  const [idRepuesto, setIdRepuesto] = useState<number | null>(null);
   const [cantidad, setCantidad] = useState("1");
   const [precio, setPrecio] = useState("0");
   const [mensaje, setMensaje] = useState("");
   const [guardando, setGuardando] = useState(false);
   const orden = ordenes.find((item) => item.id.toString() === seleccion);
+  const repuestoElegido = idRepuesto == null ? undefined : catalogo.find((repuesto) => repuesto.id === idRepuesto);
 
   async function guardar() {
     const campo = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement).value.trim();
@@ -66,6 +70,19 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
     }
   }
 
+  function cambiarNombreRepuesto(valor: string) {
+    setNombreRepuesto(valor);
+    setIdRepuesto(null);
+    setMensaje("");
+  }
+
+  function seleccionarRepuesto(repuesto: CatalogoRepuesto) {
+    setIdRepuesto(repuesto.id);
+    setNombreRepuesto(repuesto.nombre);
+    setPrecio(repuesto.precio);
+    setMensaje("");
+  }
+
   return (
     <>
       <h1>REGISTRAR DIAGNÓSTICO Y REPARACIÓN</h1>
@@ -73,7 +90,7 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
       <select id="ordenTrabajo" value={seleccion} onChange={(event) => {
         const id = event.target.value;
         setSeleccion(id);
-        setRepuestos(ordenes.find((item) => item.id.toString() === id)?.repuestos.map(({ nombre, cantidad, precio }) => ({ nombre, cantidad, precio })) ?? []);
+        setRepuestos(ordenes.find((item) => item.id.toString() === id)?.repuestos ?? []);
         setMensaje("");
       }}>
         <option value="">Nueva orden (código automático)</option>
@@ -128,20 +145,31 @@ export default function DiagnosticoPanel({ ordenes }: { ordenes: Orden[] }) {
             {repuestos.map((repuesto, index) => (
               <tr key={index}>
                 <td>{repuesto.nombre} <button type="button" className="btn-eliminar-repuesto" title="Quitar repuesto" onClick={() => setRepuestos(repuestos.filter((_, position) => position !== index))}>×</button></td>
-                <td>{repuesto.cantidad}</td><td>$ {repuesto.precio}</td>
-                <td>$ {(Number(repuesto.precio) * repuesto.cantidad).toFixed(2)}</td>
+                <td>{repuesto.cantidad}</td><td>B/. {repuesto.precio}</td>
+                <td>B/. {(Number(repuesto.precio) * repuesto.cantidad).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <div className="nuevo-repuesto" id="nuevoRepuestoForm" hidden={!nuevo}>
-          <input type="text" id="nuevoRepuestoNombre" maxLength={150} placeholder="Nombre del repuesto" aria-label="Nombre del repuesto" value={nombreRepuesto} onChange={(event) => setNombreRepuesto(event.target.value)} />
+          <div>
+            <RepuestoPicker
+              catalogo={catalogo}
+              value={nombreRepuesto}
+              onChange={cambiarNombreRepuesto}
+              onSelect={seleccionarRepuesto}
+              selectedId={idRepuesto}
+            />
+            {repuestoElegido && <p className="stock-repuesto">Stock disponible: {repuestoElegido.stock} · mínimo: {repuestoElegido.stockMinimo}</p>}
+          </div>
           <input type="number" id="nuevoRepuestoCantidad" value={cantidad} onChange={(event) => setCantidad(event.target.value)} min="1" step="1" placeholder="Cantidad" aria-label="Cantidad" />
           <input type="number" id="nuevoRepuestoPrecio" value={precio} onChange={(event) => setPrecio(event.target.value)} min="0" step="0.01" placeholder="Precio" aria-label="Precio" />
           <button type="button" id="btnConfirmarRepuesto" onClick={() => {
-            if (!nombreRepuesto.trim() || !Number.isInteger(Number(cantidad)) || Number(cantidad) <= 0 || !/^\d{1,8}(\.\d{1,2})?$/.test(precio)) { setMensaje("Repuesto inválido."); return; }
-            setRepuestos([...repuestos, { nombre: nombreRepuesto.trim(), cantidad: Number(cantidad), precio }]);
-            setNombreRepuesto(""); setCantidad("1"); setPrecio("0"); setNuevo(false);
+            const cantidadNumero = Number(cantidad);
+            if (!nombreRepuesto.trim() || !Number.isInteger(cantidadNumero) || cantidadNumero <= 0 || !/^\d{1,8}(\.\d{1,2})?$/.test(precio)) { setMensaje("Repuesto inválido."); return; }
+            if (repuestoElegido && cantidadNumero > repuestoElegido.stock) { setMensaje(`Stock insuficiente: ${repuestoElegido.nombre}. Disponible: ${repuestoElegido.stock}.`); return; }
+            setRepuestos([...repuestos, { idRepuesto: idRepuesto ?? undefined, nombre: nombreRepuesto.trim(), cantidad: cantidadNumero, precio }]);
+            setNombreRepuesto(""); setIdRepuesto(null); setCantidad("1"); setPrecio("0"); setNuevo(false); setMensaje("");
           }}>Añadir</button>
         </div>
         <div className="acciones"><button type="button" id="btnAgregarRepuesto" onClick={() => setNuevo(!nuevo)}>Agregar Repuesto</button></div>

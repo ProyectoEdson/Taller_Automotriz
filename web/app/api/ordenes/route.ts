@@ -9,7 +9,7 @@ const money = z.string().regex(/^\d{1,8}(\.\d{1,2})?$/);
 const text = (length: number) => z.string().trim().max(length);
 const required = (length: number) => text(length).min(1);
 const optional = (length: number) => text(length).optional().default("");
-const part = z.object({ nombre: required(150), cantidad: z.number().int().positive().max(2147483647), precio: money });
+const part = z.object({ idRepuesto: z.number().int().positive().optional(), nombre: required(150), cantidad: z.number().int().positive().max(2147483647), precio: money });
 const common = z.object({
   diagnostico: required(5000), reparaciones: required(5000), repuestos: z.array(part),
 });
@@ -86,18 +86,21 @@ export async function POST(request: Request) {
         update: { descripcionFall: data.diagnostico, tareaRealiz: data.reparaciones },
       });
       for (const item of data.repuestos) {
-        const inventory = await tx.inventarioRepuesto.findFirst({ where: { nombre: { equals: item.nombre, mode: "insensitive" } }, orderBy: { idRepuesto: "asc" } });
+        const inventory = item.idRepuesto
+          ? await tx.inventarioRepuesto.findUnique({ where: { idRepuesto: item.idRepuesto } })
+          : await tx.inventarioRepuesto.findFirst({ where: { nombre: { equals: item.nombre, mode: "insensitive" } }, orderBy: { idRepuesto: "asc" } });
+        if (item.idRepuesto && !inventory) throw new Conflict("El repuesto seleccionado no existe");
         if (inventory) {
           // UPDATE condicional evita stock negativo incluso entre órdenes concurrentes.
           const changed = await tx.inventarioRepuesto.updateMany({ where: { idRepuesto: inventory.idRepuesto, stockActual: { gte: item.cantidad } }, data: { stockActual: { decrement: item.cantidad } } });
-          if (!changed.count) throw new Conflict(`Stock insuficiente: ${item.nombre}`);
+          if (!changed.count) throw new Conflict(`Stock insuficiente: ${inventory.nombre}`);
         }
         const price = new Prisma.Decimal(item.precio);
         const totalItem = price.mul(item.cantidad);
         if (totalItem.gt("99999999.99")) throw new InvalidAmount();
         await tx.repuestoUtilizado.create({ data: {
           idDiagnostico: diagnostic.idDiagnostico, idRepuesto: inventory?.idRepuesto ?? null,
-          descripcion: item.nombre, cantidad: item.cantidad, precioUnitario: price, totalItem,
+          descripcion: inventory?.nombre ?? item.nombre, cantidad: item.cantidad, precioUnitario: price, totalItem,
         } });
       }
       return { idOrden, codigoOrden, idDiagnostico: diagnostic.idDiagnostico };
